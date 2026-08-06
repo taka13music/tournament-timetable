@@ -1,0 +1,33 @@
+name: Deploy Editor to Surge
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "published/**"
+  workflow_dispatch:
+
+concurrency:
+  group: surge-deploy-tournament-timetable
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Surge
+        run: npm install -g surge
+
+      - name: Deploy to Surge
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+        run: surge ./ tournament-timetable.surge.sh --token "$SURGE_TOKEN"

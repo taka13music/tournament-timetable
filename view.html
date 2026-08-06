@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>?????? ???????????</title>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      params.set("mode", "view");
+      location.replace("/?" + params.toString());
+    })();
+  </script>
+</head>
+<body>
+  <p>?????...</p>
+</body>
+</html>

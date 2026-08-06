@@ -1,0 +1,11 @@
+{
+  "name": "tournament-timetable",
+  "private": true,
+  "scripts": {
+    "deploy:editor": "./deploy-surge.sh",
+    "deploy:viewer": "./deploy-viewer.sh",
+    "setup:editor": "./setup-and-deploy-surge.sh",
+    "setup:viewer": "./setup-and-deploy-viewer.sh",
+    "setup:github": "./setup-github.sh"
+  }
+}

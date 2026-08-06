@@ -1,0 +1,48 @@
+name: Deploy Viewer to Netlify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "published/**"
+      - "index.html"
+      - "viewer-deploy.js"
+      - "view.html"
+      - "netlify.toml"
+      - "_redirects"
+      - "scripts/prepare-viewer-dist.sh"
+      - "scripts/diagnose-viewer-html.sh"
+      - "scripts/check-viewer-zip.sh"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: netlify-deploy-tournament-timetable
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare viewer bundle
+        run: |
+          bash scripts/prepare-viewer-dist.sh dist-viewer
+          if compgen -G "published/*.json" > /dev/null; then
+            mkdir -p dist-viewer/published
+            cp published/*.json dist-viewer/published/
+          fi
+          bash scripts/diagnose-viewer-html.sh dist-viewer/index.html
+
+      - name: Deploy to Netlify
+        run: npx --yes netlify-cli deploy --prod --dir=dist-viewer
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

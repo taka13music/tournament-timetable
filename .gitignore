@@ -1,0 +1,10 @@
+.DS_Store
+.netlify/
+dist-viewer/
+dist-viewer-test/
+dist-viewer-check/
+node_modules/
+*.zip
+*.bak*
+.env
+.env.*
