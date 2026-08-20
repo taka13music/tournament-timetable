@@ -67,9 +67,4 @@ cd ~/Projects/tournament-timetable
 
 ### GitHub Actions（自動デプロイ）
 
-リポジトリの Secrets に次を登録します。
-
-- **Surge（管理画面）**: `SURGE_LOGIN` / `SURGE_TOKEN`（`./get-surge-token.sh` 参照）
-- **Netlify（閲覧用）**: `NETLIFY_AUTH_TOKEN` / `NETLIFY_SITE_ID`（`./get-netlify-token.sh` 参照）
-
-`main` へ push すると Surge へ自動デプロイされます。管理画面の「公開」「更新」も GitHub の `main` に JSON を書き込むため、同じ Actions が走ります。
+`main` へ push すると https://tournament-timetable.surge.sh/ へ自動デプロイされます。

@@ -28,4 +28,23 @@ jobs:
         env:
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
-        run: surge ./ tournament-timetable.surge.sh --token "$SURGE_TOKEN"
+          DISPATCH_PAT: ${{ secrets.DEPLOY_PAT }}
+        run: |
+          DOMAIN="tournament-timetable.surge.sh"
+          if [ -n "$SURGE_TOKEN" ]; then
+            surge ./ "$DOMAIN" --token "$SURGE_TOKEN"
+            exit 0
+          fi
+          if [ -n "$DISPATCH_PAT" ]; then
+            echo "SURGE_TOKEN is not set here; requesting deploy via 3on3-table-calc secrets."
+            curl -fsS -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $DISPATCH_PAT" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/taka13music/3on3-table-calc/dispatches" \
+              -d "{\"event_type\":\"deploy-tournament-timetable\",\"client_payload\":{\"ref\":\"${GITHUB_SHA}\"}}"
+            exit 0
+          fi
+          echo "Automatic Surge deploy is not configured."
+          echo "Set repository secrets SURGE_LOGIN and SURGE_TOKEN, or DEPLOY_PAT to dispatch 3on3-table-calc."
+          exit 1

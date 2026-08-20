@@ -46,7 +46,13 @@ jobs:
           bash scripts/diagnose-viewer-html.sh dist-viewer/index.html
 
       - name: Deploy to Netlify
-        run: npx --yes netlify-cli deploy --prod --dir=dist-viewer
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "Skipping Netlify deploy (NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID not set)."
+            echo "The live app is https://tournament-timetable.surge.sh/"
+            exit 0
+          fi
+          npx --yes netlify-cli deploy --prod --dir=dist-viewer
