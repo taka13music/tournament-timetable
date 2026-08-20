@@ -9,6 +9,14 @@
       "sheetUrl": "https://docs.google.com/spreadsheets/d/1mT9Y1FVd0l9bbyxNmYAkJYLaEK3JDCeaIb9BSJuuOv8/edit?gid=372619395",
       "sheetStart": "Main Day 1A",
       "sheetEnd": "Finale"
+    },
+    {
+      "id": "evt-u-30-2026-summer",
+      "name": "u-30 2026 SUMMER",
+      "slug": "u-30-2026-summer",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1ihfMDprj1AJhVKBlJWpbyWoCEZw5BkXOHBWL9cq1CfA/edit",
+      "sheetStart": "#01 NLH Main Event Day 1A",
+      "sheetEnd": "#24 NLH Employees"
     }
   ]
 }
