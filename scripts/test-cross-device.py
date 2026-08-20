@@ -78,6 +78,7 @@ def main() -> int:
     source_has("function fetchGithubContentsJson")
     source_has("function mergeEventPair")
     source_has("function overlaySharedEventName")
+    source_has("function filterDeletedEvents")
 
     tmp = Path(tempfile.mkdtemp(prefix="tt-cross-device-"))
     shutil.copy(ROOT / "index.html", tmp / "index.html")

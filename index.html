@@ -2064,7 +2064,7 @@
     let viewerAppliedSavedAt = "";
     let viewerSyncChannel = null;
 
-    let eventRegistry = { version: 1, events: [], selectedId: null };
+    let eventRegistry = { version: 1, events: [], selectedId: null, deleted: [] };
 
     function normalizeEventSlug(raw) {
       return String(raw || "")
@@ -2101,6 +2101,48 @@
     function eventUpdatedAt(event) {
       const n = Number(event?.updatedAt || event?.t || 0);
       return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeDeletedRecord(raw) {
+      const id = String(raw?.id || "").trim();
+      const slug = normalizeEventSlug(raw?.slug || raw?.name);
+      if (!id && !slug) return null;
+      return { id, slug, t: eventUpdatedAt(raw) || Date.now() };
+    }
+
+    function mergeDeletedRecords(...lists) {
+      const byKey = new Map();
+      for (const list of lists) {
+        for (const raw of list || []) {
+          const rec = normalizeDeletedRecord(raw);
+          if (!rec) continue;
+          for (const key of [rec.id, rec.slug].filter(Boolean)) {
+            const prev = byKey.get(key);
+            if (!prev || rec.t >= prev.t) byKey.set(key, rec);
+          }
+        }
+      }
+      const seen = new Set();
+      const out = [];
+      for (const rec of byKey.values()) {
+        const key = `${rec.id}|${rec.slug}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(rec);
+      }
+      return out.sort((a, b) => b.t - a.t).slice(0, 200);
+    }
+
+    function eventMatchesDeleted(event, deleted) {
+      const id = event?.id;
+      const slug = normalizeEventSlug(event?.slug || event?.name);
+      return (deleted || []).some(
+        (rec) => (id && rec.id && rec.id === id) || (slug && rec.slug && rec.slug === slug)
+      );
+    }
+
+    function filterDeletedEvents(events, deleted) {
+      return (events || []).filter((event) => !eventMatchesDeleted(event, deleted));
     }
 
     function createEmptyEvent(partial = {}) {
@@ -2786,7 +2828,8 @@
           JSON.stringify({
             version: 1,
             events: eventRegistry.events,
-            selectedId: eventRegistry.selectedId
+            selectedId: eventRegistry.selectedId,
+            deleted: eventRegistry.deleted || []
           })
         );
       } catch (_) {}
@@ -3140,7 +3183,8 @@
         return {
           version: 1,
           events: parsed.events.map((event) => createEmptyEvent(event)),
-          selectedId: parsed.selectedId || null
+          selectedId: parsed.selectedId || null,
+          deleted: mergeDeletedRecords(parsed.deleted)
         };
       } catch (_) {
         return null;
@@ -3153,7 +3197,8 @@
       return {
         version: 1,
         events: data.events.map((event) => createEmptyEvent(event)),
-        selectedId: data.selectedId || null
+        selectedId: data.selectedId || null,
+        deleted: mergeDeletedRecords(data.deleted)
       };
     }
 
@@ -3177,12 +3222,12 @@
 
     async function fetchNtfySharedUpdates() {
       const upserts = [];
-      const deletedSlugs = new Set();
+      const deletedRecords = [];
       try {
         const res = await fetch(`${SHARED_EVENTS_NTFY_URL}/json?poll=1`, { cache: "no-store" });
-        if (!res.ok) return { upserts, deletedSlugs };
+        if (!res.ok) return { upserts, deletedRecords };
         const text = String(await res.text() || "").trim();
-        if (!text) return { upserts, deletedSlugs };
+        if (!text) return { upserts, deletedRecords };
         const rows = text.startsWith("[")
           ? JSON.parse(text)
           : text.split("\n").filter(Boolean).map((line) => JSON.parse(line));
@@ -3207,9 +3252,9 @@
           }
         }
         for (const data of byKey.values()) {
-          const slug = normalizeEventSlug(data.slug || data.name);
           if (data.deleted) {
-            if (slug) deletedSlugs.add(slug);
+            const rec = normalizeDeletedRecord(data);
+            if (rec) deletedRecords.push(rec);
             continue;
           }
           const event = parseSharedEventRecord(data);
@@ -3218,7 +3263,7 @@
       } catch (err) {
         console.warn("shared event bus", err);
       }
-      return { upserts, deletedSlugs };
+      return { upserts, deletedRecords };
     }
 
     async function publishSharedEventRecord(event, { deleted = false } = {}) {
@@ -3251,15 +3296,38 @@
     }
 
     function applySharedEventUpdates(registry, updates) {
-      const current = registry || { version: 1, events: [], selectedId: null };
-      const deleted = updates?.deletedSlugs || new Set();
-      const kept = (current.events || []).filter(
-        (event) => !deleted.has(normalizeEventSlug(event.slug || event.name))
+      const current = registry || { version: 1, events: [], selectedId: null, deleted: [] };
+      let deleted = mergeDeletedRecords(current.deleted, updates?.deletedRecords);
+      for (const event of updates?.upserts || []) {
+        const ts = eventUpdatedAt(event);
+        const slug = normalizeEventSlug(event.slug || event.name);
+        deleted = deleted.filter((rec) => {
+          const match = (event.id && rec.id && rec.id === event.id) || (slug && rec.slug && rec.slug === slug);
+          if (!match) return true;
+          return rec.t > ts;
+        });
+      }
+      const kept = filterDeletedEvents(current.events || [], deleted);
+      const merged = mergeEventRegistries(
+        { ...current, events: kept, deleted },
+        { events: updates?.upserts || [], selectedId: current.selectedId, deleted }
       );
-      return mergeEventRegistries(
-        { ...current, events: kept },
-        { events: updates?.upserts || [], selectedId: current.selectedId }
-      );
+      merged.deleted = deleted;
+      merged.events = filterDeletedEvents(merged.events, deleted);
+      return merged;
+    }
+
+    function closeDeletedSelectedEvent(beforeSelectedId) {
+      if (!beforeSelectedId) return;
+      if (eventRegistry.events.some((event) => event.id === beforeSelectedId)) return;
+      eventRegistry.selectedId = eventRegistry.events[0]?.id || null;
+      const route = parseEditorHash();
+      if (route.view === "event" && route.eventId === beforeSelectedId) {
+        applyEventToForm(null);
+        clearLoadedBoardState();
+        setEditorHash("list");
+        setStatus("他の端末で削除された大会です");
+      }
     }
 
     async function refreshEventRegistryFromRemote({ render = false, force = false } = {}) {
@@ -3267,19 +3335,31 @@
       const typingName = !force && document.activeElement && document.activeElement.id === "eventName";
       if (typingName) return eventRegistry;
       const selectedId = eventRegistry.selectedId;
-      const snapshot = JSON.stringify(eventRegistry.events || []);
+      const snapshot = JSON.stringify({
+        events: eventRegistry.events || [],
+        deleted: eventRegistry.deleted || []
+      });
       const fromFile = await fetchEventsJson().catch(() => null);
       const fromNtfy = await fetchNtfySharedUpdates();
       const fromStorage = loadEventRegistryFromStorage();
-      let merged = applySharedEventUpdates(fromFile, fromNtfy);
-      merged = mergeEventRegistries(merged, fromStorage);
+      let merged = mergeEventRegistries(
+        fromFile || { events: [], selectedId: null, deleted: [] },
+        fromStorage || { events: [], deleted: [] }
+      );
+      merged.deleted = mergeDeletedRecords(
+        eventRegistry.deleted,
+        fromFile?.deleted,
+        fromStorage?.deleted
+      );
+      merged = applySharedEventUpdates(merged, fromNtfy);
       if (selectedId && merged.events.some((event) => event.id === selectedId)) {
         merged.selectedId = selectedId;
       }
       eventRegistry = merged;
       persistEventRegistry();
-      if (render && snapshot !== JSON.stringify(eventRegistry.events || [])) {
+      if (render && snapshot !== JSON.stringify({ events: eventRegistry.events || [], deleted: eventRegistry.deleted || [] })) {
         renderEventList();
+        closeDeletedSelectedEvent(selectedId);
         const selected = getSelectedEvent();
         if (selected && parseEditorHash().view === "event" && document.activeElement?.id !== "eventName") {
           applyEventToForm(selected);
@@ -3337,7 +3417,12 @@
         (base?.selectedId && byId.has(base.selectedId) && base.selectedId) ||
         events[0]?.id ||
         null;
-      return { version: 1, events, selectedId };
+      return {
+        version: 1,
+        events,
+        selectedId,
+        deleted: mergeDeletedRecords(base?.deleted, overlay?.deleted)
+      };
     }
 
     function clearLoadedBoardState() {
@@ -3426,6 +3511,9 @@
       persistEventRegistry();
       deleteTimetableCache(target.id);
       renderEventList();
+      const deletedRec = normalizeDeletedRecord({ id: target.id, slug: target.slug, t: Date.now() });
+      eventRegistry.deleted = mergeDeletedRecords(eventRegistry.deleted, [deletedRec]);
+      persistEventRegistry();
       publishSharedEventRecord(target, { deleted: true }).catch(() => {});
       maybeSaveEventsRegistryToGithub();
       const route = parseEditorHash();
@@ -3458,7 +3546,8 @@
             sheetStart: event.sheetStart,
             sheetEnd: event.sheetEnd,
             updatedAt: eventUpdatedAt(event) || undefined
-          }))
+          })),
+          deleted: mergeDeletedRecords(eventRegistry.deleted)
         },
         null,
         2
@@ -3516,6 +3605,7 @@
       });
       ["sheetUrl", "sheetStart", "sheetEnd"].forEach((id) => {
         $(id)?.addEventListener("input", () => setPublishButtonState());
+        $(id)?.addEventListener("change", () => saveCurrentEventFromForm({ announce: false }));
       });
       window.addEventListener("hashchange", () => {
         applyEditorRoute({ skipHashWrite: true }).catch((err) => {
