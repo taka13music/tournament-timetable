@@ -1784,7 +1784,19 @@
   <script>
     (function () {
       const params = new URLSearchParams(location.search);
-      if (params.get("mode") === "view" || location.pathname.endsWith("/view.html")) {
+      const path = String(location.pathname || "").replace(/\/+$/, "") || "";
+      const hasEventPath = /^\/e\/[^/]+$/i.test(path);
+      if (
+        params.get("mode") === "view" ||
+        location.pathname.endsWith("/view.html") ||
+        hasEventPath ||
+        params.get("event") ||
+        params.get("e") ||
+        params.get("p") ||
+        params.get("c") ||
+        params.get("cfg") ||
+        params.get("config")
+      ) {
         window.APP_MODE = "view";
       }
     })();
@@ -1839,7 +1851,7 @@
 
         <div class="controls-view-url" id="eventViewUrlBar">
           <span class="controls-view-url-label">&#38322;&#35239;URL</span>
-          <code id="eventViewUrlHint">?mode=view&amp;event=&#22823;&#20250;&#21517;</code>
+          <code id="eventViewUrlHint">/e/&#22823;&#20250;&#21517;</code>
           <button type="button" id="eventCopyViewUrlBtn" class="btn-secondary">URL&#12434;&#12467;&#12500;&#12540;</button>
           <button type="button" id="openEventViewBtn" class="btn-primary">&#38322;&#35239;&#12434;&#38283;&#12367;</button>
         </div>
@@ -1949,6 +1961,11 @@
       const params = new URLSearchParams(location.search);
       if (params.get("mode") === "view") return "view";
       if (location.pathname.endsWith("/view.html")) return "view";
+      const path = String(location.pathname || "").replace(/\/+$/, "") || "";
+      if (/^\/e\/[^/]+$/i.test(path)) return "view";
+      if (params.get("event") || params.get("e") || params.get("p") || params.get("c") || params.get("cfg") || params.get("config")) {
+        return "view";
+      }
       return "edit";
     })();
     const IS_VIEWER_MODE = APP_MODE === "view";
@@ -2129,30 +2146,24 @@
       return String(location.origin || EDITOR_SITE_ORIGIN).replace(/\/$/, "");
     }
 
+    function getPathEventSlug() {
+      const path = String(location.pathname || "").replace(/\/+$/, "") || "";
+      const match = path.match(/^\/e\/([^/]+)$/i);
+      return match ? decodeURIComponent(match[1]) : "";
+    }
+
     function buildEventViewUrl(event) {
       const name = event?.name || $("eventName")?.value || "";
       if (!String(name).trim()) return "";
       const slug = uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
-      const sheetUrl = String(event?.sheetUrl || $("sheetUrl")?.value || "").trim();
-      const sheetStart = String(event?.sheetStart || $("sheetStart")?.value || "").trim();
-      const sheetEnd = String(event?.sheetEnd || $("sheetEnd")?.value || "").trim();
-      const params = new URLSearchParams();
-      params.set("mode", "view");
-      params.set("event", slug);
-      if (name) params.set("n", name);
-      const sheetId = extractSpreadsheetId(sheetUrl);
-      if (sheetId) params.set("i", sheetId);
-      else if (sheetUrl) params.set("u", sheetUrl);
-      if (sheetStart) params.set("a", sheetStart);
-      if (sheetEnd) params.set("z", sheetEnd);
-      return `${getViewerSiteOrigin()}/?${params.toString()}`;
+      return `${getViewerSiteOrigin()}/e/${encodeURIComponent(slug)}`;
     }
 
     function updateEventViewUrlHint(event) {
       const hint = $("eventViewUrlHint");
       if (!hint) return;
       const url = buildEventViewUrl(event || getSelectedEvent());
-      hint.textContent = url || "?mode=view&event=大会名";
+      hint.textContent = url || `${getViewerSiteOrigin()}/e/大会名`;
     }
 
     function parseEditorHash() {
@@ -2870,7 +2881,7 @@
 
     function getViewerEventSlug() {
       const params = new URLSearchParams(location.search);
-      const raw = params.get("event") || params.get("e") || params.get("p") || "";
+      const raw = params.get("event") || params.get("e") || params.get("p") || getPathEventSlug();
       if (isEmbeddedPublishPayload(raw)) return "";
       return normalizeEventSlug(raw);
     }
@@ -4272,7 +4283,7 @@
       for (const event of events) {
         if (!event.slug) continue;
         const link = document.createElement("a");
-        link.href = `?event=${encodeURIComponent(event.slug)}`;
+        link.href = `/e/${encodeURIComponent(event.slug)}`;
         link.textContent = event.name || event.slug;
         list.appendChild(link);
       }
@@ -4290,7 +4301,7 @@
 
     async function loadViewerData() {
       const params = new URLSearchParams(location.search);
-      const pValue = params.get("p") || params.get("event") || params.get("e");
+      const pValue = params.get("p") || params.get("event") || params.get("e") || getPathEventSlug();
       const cValue = params.get("c") || params.get("cfg") || params.get("config");
 
       try {
@@ -4304,7 +4315,7 @@
           const registry = await fetchEventsJson();
           const events = (registry?.events || []).filter((event) => event.slug);
           if (events.length === 1) {
-            location.replace(`?event=${encodeURIComponent(events[0].slug)}`);
+            location.replace(`/e/${encodeURIComponent(events[0].slug)}`);
             return;
           }
           if (events.length > 1) {

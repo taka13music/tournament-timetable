@@ -4,7 +4,7 @@
   var SCRIPT_CLOSE = "</scr" + "ipt>";
   var EDITOR_SITE_ORIGIN = "https://tournament-timetable.surge.sh";
   var PUBLISHED_JSON_PATH = "published/timetable.json";
-  var VIEWER_DEPLOY_REDIRECTS = "/    /index.html    200\n/view.html    /index.html    200\n";
+  var VIEWER_DEPLOY_REDIRECTS = "/    /index.html    200\n/e/*    /index.html    200\n/view.html    /index.html    200\n";
   var VIEWER_DEPLOY_VIEW_HTML = [
     "<!DOCTYPE html>",
     '<html lang="ja">',

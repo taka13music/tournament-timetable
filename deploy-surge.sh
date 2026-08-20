@@ -28,6 +28,8 @@ if ! token_valid "$SURGE_TOKEN"; then
   exit 1
 fi
 
+cp -f index.html 200.html
+
 if command -v surge &>/dev/null; then
   surge . "$DOMAIN" --token "$SURGE_TOKEN"
 else

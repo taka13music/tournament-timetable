@@ -31,6 +31,7 @@ jobs:
           DISPATCH_PAT: ${{ secrets.DEPLOY_PAT }}
         run: |
           DOMAIN="tournament-timetable.surge.sh"
+          cp -f index.html 200.html
           if [ -n "$SURGE_TOKEN" ]; then
             surge ./ "$DOMAIN" --token "$SURGE_TOKEN"
             exit 0
