@@ -2054,6 +2054,7 @@
     const PUBLISHED_JSON_PATH = "published/timetable.json";
     const EVENTS_JSON_PATH = "events.json";
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
+    const SHARED_EVENTS_NTFY_URL = "https://ntfy.sh/tournament-timetable-taka13music-events";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
     const TIMETABLE_CACHE_VERSION = 2;
@@ -2691,12 +2692,18 @@
       const viewUrl = buildEventViewUrl(event);
       const settings = loadGithubSettings();
       const previous = String($("status")?.textContent || "").trim();
+      const shared = await publishSharedEventRecord(event);
       if (!settings.token) {
-        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: false });
+        if (shouldShowModal) {
+          showAppPublishModal({ event, viewUrl, savedToServer: shared });
+        }
         setStatus(
           previous
-            ? `${previous} / 他の端末では表示された閲覧URLを開いてください`
-            : "他の端末では表示された閲覧URLを開いてください"
+            ? `${previous} / ${shared ? "他の端末向けに配信しました" : "他の端末への配信に失敗しました"}`
+            : shared
+              ? "他の端末向けに配信しました"
+              : "他の端末への配信に失敗しました",
+          !shared
         );
         return;
       }
@@ -2712,7 +2719,7 @@
         }
       } catch (err) {
         console.warn("shared save after load failed", err);
-        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: false });
+        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: shared });
         setStatus(
           previous
             ? `${previous} / 自動保存に失敗しました: ${err.message || err}`
@@ -2723,6 +2730,8 @@
     }
 
     async function maybeSaveEventsRegistryToGithub() {
+      const event = getSelectedEvent();
+      if (event) publishSharedEventRecord(event).catch(() => {});
       const settings = loadGithubSettings();
       if (!settings.token || IS_VIEWER_MODE) return;
       try {
@@ -3128,6 +3137,123 @@
       };
     }
 
+    function isSharedSheetUrl(url) {
+      return /docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+/i.test(String(url || ""));
+    }
+
+    function parseSharedEventRecord(raw) {
+      if (!raw || raw.deleted) return null;
+      const event = createEmptyEvent(raw);
+      if (!normalizeEventSlug(event.slug || event.name) || !isSharedSheetUrl(event.sheetUrl)) {
+        return null;
+      }
+      event.slug = normalizeEventSlug(event.slug || event.name);
+      return event;
+    }
+
+    async function fetchNtfySharedUpdates() {
+      const upserts = [];
+      const deletedSlugs = new Set();
+      try {
+        const res = await fetch(`${SHARED_EVENTS_NTFY_URL}/json?poll=1`, { cache: "no-store" });
+        if (!res.ok) return { upserts, deletedSlugs };
+        const text = String(await res.text() || "").trim();
+        if (!text) return { upserts, deletedSlugs };
+        const rows = text.startsWith("[")
+          ? JSON.parse(text)
+          : text.split("\n").filter(Boolean).map((line) => JSON.parse(line));
+        const bySlug = new Map();
+        for (const row of rows) {
+          if (row?.event && row.event !== "message") continue;
+          let data = row?.message != null ? row.message : row;
+          if (typeof data === "string") {
+            try {
+              data = JSON.parse(data);
+            } catch (_) {
+              continue;
+            }
+          }
+          const slug = normalizeEventSlug(data?.slug || data?.name);
+          if (!slug) continue;
+          bySlug.set(slug, data);
+        }
+        for (const data of bySlug.values()) {
+          const slug = normalizeEventSlug(data.slug || data.name);
+          if (data.deleted) {
+            deletedSlugs.add(slug);
+            continue;
+          }
+          const event = parseSharedEventRecord(data);
+          if (event) upserts.push(event);
+        }
+      } catch (err) {
+        console.warn("shared event bus", err);
+      }
+      return { upserts, deletedSlugs };
+    }
+
+    async function publishSharedEventRecord(event, { deleted = false } = {}) {
+      const slug = normalizeEventSlug(event?.slug || event?.name);
+      if (!slug) return false;
+      if (!deleted && !isSharedSheetUrl(event?.sheetUrl)) return false;
+      const payload = deleted
+        ? { v: 1, slug, deleted: true, t: Date.now() }
+        : {
+            v: 1,
+            id: event.id,
+            name: event.name || slug,
+            slug,
+            sheetUrl: event.sheetUrl,
+            sheetStart: event.sheetStart || "",
+            sheetEnd: event.sheetEnd || "",
+            t: Date.now()
+          };
+      try {
+        const res = await fetch(SHARED_EVENTS_NTFY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        return res.ok;
+      } catch (err) {
+        console.warn("shared event publish", err);
+        return false;
+      }
+    }
+
+    function applySharedEventUpdates(registry, updates) {
+      const current = registry || { version: 1, events: [], selectedId: null };
+      const deleted = updates?.deletedSlugs || new Set();
+      const kept = (current.events || []).filter(
+        (event) => !deleted.has(normalizeEventSlug(event.slug || event.name))
+      );
+      return mergeEventRegistries(
+        { ...current, events: kept },
+        { events: updates?.upserts || [], selectedId: current.selectedId }
+      );
+    }
+
+    async function refreshEventRegistryFromRemote({ render = false, force = false } = {}) {
+      if (IS_VIEWER_MODE) return eventRegistry;
+      if (!force && parseEditorHash().view === "event") return eventRegistry;
+      const selectedId = eventRegistry.selectedId;
+      const snapshot = JSON.stringify(eventRegistry.events || []);
+      const fromFile = await fetchEventsJson().catch(() => null);
+      const fromNtfy = await fetchNtfySharedUpdates();
+      const fromStorage = loadEventRegistryFromStorage();
+      let merged = applySharedEventUpdates(fromFile, fromNtfy);
+      merged = mergeEventRegistries(merged, fromStorage);
+      if (selectedId && merged.events.some((event) => event.id === selectedId)) {
+        merged.selectedId = selectedId;
+      }
+      eventRegistry = merged;
+      persistEventRegistry();
+      if (render && snapshot !== JSON.stringify(eventRegistry.events || [])) {
+        renderEventList();
+      }
+      return eventRegistry;
+    }
+
     function mergeEventRegistries(base, overlay) {
       const byId = new Map();
       const bySlug = new Map();
@@ -3244,6 +3370,7 @@
       persistEventRegistry();
       deleteTimetableCache(target.id);
       renderEventList();
+      publishSharedEventRecord(target, { deleted: true }).catch(() => {});
       maybeSaveEventsRegistryToGithub();
       const route = parseEditorHash();
       if (route.view === "event" && route.eventId === target.id) {
@@ -3282,9 +3409,7 @@
     }
 
     async function initEventRegistry() {
-      const fromFile = await fetchEventsJson();
-      const fromStorage = loadEventRegistryFromStorage();
-      eventRegistry = mergeEventRegistries(fromFile, fromStorage);
+      await refreshEventRegistryFromRemote({ render: true, force: true });
       if (!eventRegistry.selectedId && eventRegistry.events.length) {
         eventRegistry.selectedId = eventRegistry.events[0].id;
       }
@@ -3300,6 +3425,18 @@
       } else {
         await applyEditorRoute({ skipHashWrite: true });
       }
+    }
+
+    function setupSharedEventSync() {
+      if (IS_VIEWER_MODE) return;
+      const refresh = () => {
+        refreshEventRegistryFromRemote({ render: true }).catch(() => {});
+      };
+      window.addEventListener("focus", refresh);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") refresh();
+      });
+      setInterval(refresh, 15000);
     }
 
     function setupEventControls() {
@@ -4263,7 +4400,15 @@
 
     async function loadViewerConfigFromEventsJson(slug) {
       const registry = await fetchEventsJson();
-      const event = findEventBySlug(slug, registry);
+      let event = findEventBySlug(slug, registry);
+      if (!event) {
+        const updates = await fetchNtfySharedUpdates();
+        event = (updates.upserts || []).find(
+          (item) =>
+            normalizeEventSlug(item.slug) === normalizeEventSlug(slug) ||
+            normalizeEventSlug(item.name) === normalizeEventSlug(slug)
+        );
+      }
       return eventToViewerSheetConfig(event);
     }
 
@@ -9189,6 +9334,7 @@
       setupEventControls();
       setupPublishControls();
       setupSharedBoardControls();
+      setupSharedEventSync();
       initEventRegistry().catch((err) => {
         console.warn(err);
         setStatus("大会一覧の読み込みに失敗しました", true);
