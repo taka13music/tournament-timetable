@@ -2,20 +2,22 @@
 
 Google スプレッドシートからトーナメントのブレイク時間を読み込み、重複をひと目で比較できるタイムテーブルです。
 
-| 用途 | 公開先 | URL |
-|------|-------------|-----|
-| **管理画面**（編集） | Surge | `https://tournament-timetable.surge.sh/` |
-| **閲覧用** | Netlify | `https://tournament-timetable.netlify.app/`（または自分の Netlify サイト） |
+| 用途 | URL |
+|------|-------------|
+| **管理画面** | `https://tournament-timetable.surge.sh/` |
+| **閲覧** | `https://tournament-timetable.surge.sh/?mode=view&event=スラッグ` |
+
+管理も閲覧も同じ Surge サイトです。大会データを「保存」すると GitHub に書き出され、他の端末でも同じ閲覧 URL で開けます。
 
 ## 使い方（大会ごと）
 
 1. 管理画面で **大会を追加**（大会名・スラッグ・シートURL・タブ範囲）
-2. 大会を選んで「更新」→ その大会のシートだけ読み込み / 差分更新
-3. 「生成」で閲覧用 Zip をダウンロード（`published/{スラッグ}.json` と `events.json` を含む）
-4. Netlify にデプロイ
-5. 閲覧は `?event=スラッグ`（例: `/?event=jopt-2025`）
+2. 「公開」でシートを読み込む。以降の変更は「更新」（差分）
+3. 初回だけ「保存先の設定」に GitHub Token（`repo` 権限）を入れる
+4. 「保存」を押す。`events.json` と `published/{スラッグ}.json` がリポジトリに書き込まれ、まもなく他の端末でも同じ閲覧 URL で見られます
+5. 閲覧は `?mode=view&event=スラッグ`（例: `/?mode=view&event=jopt-2025`）
 
-大会設定はブラウザに保存され、生成 Zip の `events.json` 経由で GitHub / Netlify にも載せられます。
+Token はブラウザの localStorage にだけ保存されます。Token を設定済みなら、「公開」「更新」のあとにも自動でサーバーへ保存します。GitHub への書き込み後、Actions が Surge を更新するまで 1 分ほどかかることがあります。
 
 ## スプレッドシートの形式
 
@@ -87,4 +89,4 @@ Netlify の Deploy manually にこの Zip をドラッグ＆ドロップして�
 - **Surge（管理画面）**: `SURGE_LOGIN` / `SURGE_TOKEN`（`./get-surge-token.sh` 参照）
 - **Netlify（閲覧用）**: `NETLIFY_AUTH_TOKEN` / `NETLIFY_SITE_ID`（`./get-netlify-token.sh` 参照）
 
-`main` へ push すると、変更内容に応じて Surge / Netlify へ自動デプロイされます（`published/**` と `events.json` 含む）。
+`main` へ push すると Surge へ自動デプロイされます。管理画面の「保存」も GitHub の `main` に JSON を書き込むため、同じ Actions が走ります。

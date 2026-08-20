@@ -1895,8 +1895,35 @@
         <div class="controls-detail-actions">
           <button type="button" id="fullLoadBtn" class="btn-primary btn-action" title="シートからタイムテーブルを新規読み込み">&#20844;&#38283;</button>
           <button type="button" id="refreshBtn" class="btn-accent btn-action" title="変更点だけ差分更新">&#26356;&#26032;</button>
-          <span class="hint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#26356;&#26032;: &#22793;&#26356;&#20998;&#12398;&#12415;</span>
+          <button type="button" id="saveSharedBtn" class="btn-primary btn-action" title="他の端末でも見られるようにサーバーへ保存">&#20445;&#23384;</button>
+          <span class="hint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#26356;&#26032;: &#22793;&#26356;&#20998;&#12398;&#12415; &#47; &#20445;&#23384;: &#20182;&#12398;&#31471;&#26411;&#12391;&#12418;&#35211;&#12425;&#12428;&#12427;</span>
         </div>
+
+        <details class="editor-settings-details" id="githubSaveDetails">
+          <summary>&#20445;&#23384;&#20808;&#12398;&#35373;&#23450;&#65288;&#21021;&#22238;&#12398;&#12415;&#65289;</summary>
+          <p class="hint" style="margin: 10px 0 8px;">GitHub Token&#65288;repo&#27161;&#38480;&#65289;&#12434;&#19968;&#24230;&#20837;&#21147;&#12377;&#12427;&#12392;&#12289;&#22823;&#20250;&#12487;&#12540;&#12479;&#12364;&#12469;&#12540;&#12496;&#12540;&#12395;&#20445;&#23384;&#12373;&#12428;&#12289;&#20182;&#12398;&#31471;&#26411;&#12391;&#12397;&#38322;&#35239;URL&#12364;&#38283;&#12369;&#12414;&#12377;&#12290;</p>
+          <div class="github-settings" id="githubSettings">
+            <div class="field field-token">
+              <label for="githubToken">GitHub Token&#65288;repo&#27161;&#38480;&#65289;</label>
+              <input id="githubToken" type="password" value="" placeholder="ghp_..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="githubOwner">Owner</label>
+              <input id="githubOwner" type="text" value="taka13music" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="githubRepo">Repo</label>
+              <input id="githubRepo" type="text" value="tournament-timetable" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="githubBranch">Branch</label>
+              <input id="githubBranch" type="text" value="main" spellcheck="false" />
+            </div>
+            <div class="controls-event-actions">
+              <button type="button" id="githubSettingsSaveBtn" class="btn-secondary">Token &#12434;&#35373;&#23450;</button>
+            </div>
+          </div>
+        </details>
 
         <details class="editor-settings-details" open>
           <summary>&#12471;&#12540;&#12488;&#35373;&#23450;</summary>
@@ -2020,6 +2047,8 @@
     const FULL_LOAD_BTN_BUSY_LABEL = "\u8aad\u307f\u8fbc\u307f\u4e2d\u2026";
     const DIFF_UPDATE_BTN_LABEL = "\u66f4\u65b0";
     const DIFF_UPDATE_BTN_BUSY_LABEL = "\u5dee\u5206\u66f4\u65b0\u4e2d\u2026";
+    const SAVE_SHARED_BTN_LABEL = "\u4fdd\u5b58";
+    const SAVE_SHARED_BTN_BUSY_LABEL = "\u4fdd\u5b58\u4e2d\u2026";
     const GITHUB_SETTINGS_KEY = "tournamentGithubPublishSettings";
     const DEFAULT_GITHUB_SETTINGS = {
       token: "",
@@ -2566,7 +2595,7 @@
         setStatus(
           settings.token
             ? `GitHub 設定を保存しました（${settings.owner}/${settings.repo}@${settings.branch}）`
-            : "GitHub 設定を保存しました（Token 未入力のため公開はできません）"
+            : "GitHub 設定を保存しました（Token 未入力のためサーバー保存はできません）"
         );
       }
       return settings;
@@ -2639,18 +2668,17 @@
 
     function showAppPublishModal({ event, viewUrl, commitUrl }) {
       const modal = $("publishModal");
-      $("publishModalTitle").textContent = "公開しました";
+      $("publishModalTitle").textContent = "保存しました";
       $("publishModalDesc").innerHTML =
-        `大会「${escapeHtml(event.name || event.slug)}」を GitHub に公開しました。<br>` +
-        `Actions が Surge へ反映すると、下の閲覧URLで見られます。` +
+        `大会「${escapeHtml(event.name || event.slug)}」をサーバーに保存しました。<br>` +
+        `まもなく同じ閲覧URLで、他の端末からも見られます。` +
         (commitUrl
-          ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">commit を確認</a></span>`
+          ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">保存内容を確認</a></span>`
           : "");
       $("publishWorkflowSteps").innerHTML = `
-        <li>管理画面で大会を更新</li>
-        <li>「公開」で GitHub に保存</li>
-        <li>Actions が Surge を自動デプロイ</li>
-        <li>大会ごとの閲覧URLを共有</li>
+        <li>管理画面で大会を読み込む</li>
+        <li>「保存」でサーバーへ書き出す</li>
+        <li>同じ閲覧URLを他の端末で開く</li>
       `;
       const wrap = $("publishResultUrlWrap");
       const code = $("publishResultUrl");
@@ -2668,14 +2696,53 @@
       modal.setAttribute("aria-hidden", "false");
     }
 
+    async function saveSharedDataToGithub({ announce = true, skipBusy = false } = {}) {
+      if (!Object.keys(tournamentsByDay).length) {
+        throw new Error("保存するタイムテーブルがありません。先に「公開」で読み込んでください");
+      }
+      const event = saveCurrentEventFromForm({ announce: false });
+      if (!event?.slug) {
+        throw new Error("大会スラッグを入力してください");
+      }
+      const settings = saveGithubSettingsFromForm({ announce: false });
+      applyGithubSettingsToForm(settings);
+      if (!settings.token) {
+        $("githubSaveDetails")?.setAttribute("open", "");
+        $("githubToken")?.focus();
+        throw new Error("保存先の GitHub Token を入力してください");
+      }
+      if (!skipBusy) setExportBusy(true);
+      try {
+        await persistTimetableCache(event.id);
+        const config = buildPublishConfig();
+        const jsonText = buildPublishedJsonText(config);
+        const eventsText = buildEventsJsonText();
+        const publishedPath = getPublishedPathForEvent(event);
+        const message = `save: ${event.slug} (${event.name || event.slug})`;
+        setStatus("サーバーへ保存中…");
+        await githubPutTextFile(settings, EVENTS_JSON_PATH, eventsText, message);
+        await githubPutTextFile(settings, publishedPath, jsonText, message);
+        if (publishedPath !== PUBLISHED_JSON_PATH) {
+          await githubPutTextFile(settings, PUBLISHED_JSON_PATH, jsonText, `${message} (compat timetable.json)`);
+        }
+        const viewUrl = buildEventViewUrl(event);
+        if (announce) {
+          const commitUrl = `https://github.com/${settings.owner}/${settings.repo}/commits/${encodeURIComponent(settings.branch)}`;
+          showAppPublishModal({ event, viewUrl, commitUrl });
+          setStatus(
+            `保存しました。まもなく他の端末でも ${viewUrl} で閲覧できます`
+          );
+        }
+        return viewUrl;
+      } finally {
+        if (!skipBusy) setExportBusy(false);
+      }
+    }
+
     async function publishEventToGithub() {
       if (exportInProgress) return;
       if (loadInProgress) {
-        setStatus("読み込み中です。完了してから「公開」してください", true);
-        return;
-      }
-      if (!Object.keys(tournamentsByDay).length) {
-        setStatus("公開するデータがありません。先に「更新」でシートを読み込んでください", true);
+        setStatus("読み込み中です。完了してから「保存」してください", true);
         return;
       }
       const missingSheets = getMissingScheduledSheetNames();
@@ -2686,53 +2753,27 @@
         );
         return;
       }
-      const sheetUrl = $("sheetUrl")?.value.trim();
-      if (!sheetUrl) {
-        setStatus("スプレッドシートURLが必要です", true);
-        $("sheetUrl")?.focus();
-        return;
-      }
-
-      const event = saveCurrentEventFromForm({ announce: false });
-      if (!event?.slug) {
-        setStatus("大会スラッグを入力して保存してください", true);
-        $("eventSlug")?.focus();
-        return;
-      }
-
-      const settings = saveGithubSettingsFromForm({ announce: false });
-      applyGithubSettingsToForm(settings);
-      if (!settings.token) {
-        setStatus("GitHub Token を入力して「設定を保存」してください", true);
-        $("githubToken")?.focus();
-        return;
-      }
-
-      setExportBusy(true);
       try {
-        const config = buildPublishConfig();
-        const jsonText = buildPublishedJsonText(config);
-        const eventsText = buildEventsJsonText();
-        const publishedPath = getPublishedPathForEvent(event);
-        const message = `publish: ${event.slug} (${event.name || event.slug})`;
-
-        setStatus("GitHub に公開中…");
-        await githubPutTextFile(settings, EVENTS_JSON_PATH, eventsText, message);
-        await githubPutTextFile(settings, publishedPath, jsonText, message);
-        if (publishedPath !== PUBLISHED_JSON_PATH) {
-          await githubPutTextFile(settings, PUBLISHED_JSON_PATH, jsonText, `${message} (compat timetable.json)`);
-        }
-
-        const viewUrl = buildEventViewUrl(event);
-        const commitUrl = `https://github.com/${settings.owner}/${settings.repo}/commits/${encodeURIComponent(settings.branch)}`;
-        showAppPublishModal({ event, viewUrl, commitUrl });
-        setStatus(
-          `公開しました。まもなく ${viewUrl} で閲覧できます（Actions 反映後）`
-        );
+        await saveSharedDataToGithub({ announce: true });
       } catch (e) {
-        setStatus(`公開に失敗しました: ${e.message || e}`, true);
-      } finally {
-        setExportBusy(false);
+        setStatus(`保存に失敗しました: ${e.message || e}`, true);
+      }
+    }
+
+    async function maybeSaveSharedDataAfterLoad() {
+      const settings = loadGithubSettings();
+      if (!settings.token || !Object.keys(tournamentsByDay).length) return;
+      const previous = String($("status")?.textContent || "").trim();
+      try {
+        await saveSharedDataToGithub({ announce: false, skipBusy: true });
+        setStatus(
+          previous
+            ? `${previous} / サーバーへも保存しました`
+            : "サーバーへ保存しました"
+        );
+      } catch (err) {
+        console.warn("shared save after load failed", err);
+        if (previous) setStatus(previous);
       }
     }
 
@@ -4434,47 +4475,64 @@
 
     async function loadPublishedJsonPayload(legacySlug) {
       const slug = normalizeEventSlug(legacySlug);
-      if (slug) {
+      const isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+      const tryCache = async () => {
+        if (!slug) return null;
         const cached = await loadTimetableCacheForViewerSlug(slug);
-        const fromCache = timetableCacheToViewerPayload(cached);
-        if (fromCache) return fromCache;
-      }
+        return timetableCacheToViewerPayload(cached);
+      };
 
-      const candidates = [];
-      if (slug) candidates.push(getLegacyPublishedPath(slug));
-      if (!slug) candidates.push(PUBLISHED_JSON_PATH);
-      let lastError = null;
-      for (const path of [...new Set(candidates)]) {
-        try {
-          const res = await fetch(`${path}?_=${Date.now()}`, { cache: "no-store" });
-          if (!res.ok) {
-            lastError = new Error(
-              `\u516c\u958b\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093\uFF08${path}\uFF09\u3002\u7ba1\u7406\u753b\u9762\u3067\u300c\u516c\u958b\u300d\u3057\u3066\u304b\u3089\u518d\u5ea6\u958b\u3044\u3066\u304f\u3060\u3055\u3044\u3002`
-            );
-            continue;
-          }
-          const raw = await res.json();
-          const decoded =
-            raw && (raw.v === 4 || raw.v === 5) ? expandPublishPayload(raw) : raw;
-          if (slug) {
-            const payloadSlug = normalizeEventSlug(decoded?.eventId || decoded?.eventSlug || "");
-            if (payloadSlug && payloadSlug !== slug) {
+      const fetchPublished = async () => {
+        const candidates = [];
+        if (slug) candidates.push(getLegacyPublishedPath(slug));
+        if (!slug) candidates.push(PUBLISHED_JSON_PATH);
+        let lastError = null;
+        for (const path of [...new Set(candidates)]) {
+          try {
+            const res = await fetch(`${path}?_=${Date.now()}`, { cache: "no-store" });
+            if (!res.ok) {
               lastError = new Error(
-                `公開データが大会「${slug}」と一致しません。管理画面で「公開」し直してください。`
+                `公開データがありません（${path}）。管理画面で「保存」してから再度開いてください。`
               );
               continue;
             }
+            const raw = await res.json();
+            const decoded =
+              raw && (raw.v === 4 || raw.v === 5) ? expandPublishPayload(raw) : raw;
+            if (slug) {
+              const payloadSlug = normalizeEventSlug(decoded?.eventId || decoded?.eventSlug || "");
+              if (payloadSlug && payloadSlug !== slug) {
+                lastError = new Error(
+                  `公開データが大会「${slug}」と一致しません。管理画面で「保存」し直してください。`
+                );
+                continue;
+              }
+            }
+            return { decoded, error: null };
+          } catch (err) {
+            lastError = err;
           }
-          return decoded;
-        } catch (err) {
-          lastError = err;
         }
+        return { decoded: null, error: lastError };
+      };
+
+      const fromCache = await tryCache();
+      if (isLocalHost && fromCache) return fromCache;
+
+      const { decoded: fromPublished, error: lastError } = await fetchPublished();
+      if (fromCache && fromPublished) {
+        const cacheTs = Date.parse(fromCache.publishedAt || "") || 0;
+        const pubTs = Date.parse(fromPublished.publishedAt || "") || 0;
+        return cacheTs > pubTs ? fromCache : fromPublished;
       }
+      if (fromPublished) return fromPublished;
+      if (fromCache) return fromCache;
+
       throw (
         lastError ||
         new Error(
           slug
-            ? `大会「${slug}」の閲覧データがありません。管理画面でシートを「公開」してから開いてください。`
+            ? `大会「${slug}」の閲覧データがありません。管理画面で「保存」してから開いてください。`
             : "公開データを読み込めませんでした。"
         )
       );
@@ -4695,10 +4753,16 @@
     }
 
     function setupPublishControls() {
+      applyGithubSettingsToForm();
       $("viewerZipName")?.addEventListener("blur", () => {
         const el = $("viewerZipName");
         if (!el || !el.value.trim()) return;
         el.value = sanitizeViewerZipFileName(el.value);
+      });
+      $("saveSharedBtn")?.addEventListener("click", publishEventToGithub);
+      $("githubSettingsSaveBtn")?.addEventListener("click", () => {
+        const settings = saveGithubSettingsFromForm({ announce: true });
+        applyGithubSettingsToForm(settings);
       });
       $("openEventViewBtn")?.addEventListener("click", openSelectedEventView);
       $("publishCopyViewUrlBtn")?.addEventListener("click", async () => {
@@ -8722,6 +8786,14 @@
         zipBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
         zipBtn.textContent = exportInProgress ? PUBLISH_BTN_BUSY_LABEL : PUBLISH_BTN_LABEL;
       }
+      const saveBtn = $("saveSharedBtn");
+      if (saveBtn) {
+        const canSave = Object.keys(tournamentsByDay).length > 0;
+        saveBtn.disabled = blocked || !canSave;
+        saveBtn.classList.toggle("is-busy", exportInProgress);
+        saveBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
+        saveBtn.textContent = exportInProgress ? SAVE_SHARED_BTN_BUSY_LABEL : SAVE_SHARED_BTN_LABEL;
+      }
     }
 
     function setRefreshBusy(busy) {
@@ -8794,6 +8866,7 @@
             ? `\u66f4\u65b0\u5b8c\u4e86\uff08${result.changed ? "1\u4ef6\u5909\u66f4" : "\u5909\u66f4\u306a\u3057"}\u3001\u5408\u8a08 ${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
             : `\u8aad\u307f\u8fbc\u307f\u5b8c\u4e86\uff08${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
         );
+        await maybeSaveSharedDataAfterLoad();
         return true;
       } catch (e) {
         setStatus(formatFetchError(e), true);
@@ -9232,6 +9305,9 @@
               total +
               " \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09"
           );
+        }
+        if (!failedSheets.length) {
+          await maybeSaveSharedDataAfterLoad();
         }
       } catch (e) {
         if (myGeneration === loadGeneration) {
