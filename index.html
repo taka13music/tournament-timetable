@@ -3430,11 +3430,7 @@
         tournament.blocks = unpackPublishBlocksV5(row[row.length - 1], dict);
       }
 
-      if (tournament.allLevelsLate) {
-        applyLateStylesToBlocks(tournament, null, true);
-      } else if (tournament.yellowLevel != null) {
-        applyLateStylesToBlocks(tournament, Number(tournament.yellowLevel), false);
-      }
+      applyLateRegistrationStyles(tournament);
       tournament.headerLines = buildHeaderInfoLines({
         fee: tournament.fee,
         chips: tournament.chips
@@ -3520,11 +3516,7 @@
         tournament.eventDate = meta.d || "";
         tournament.blocks = (row[2] || []).map(unpackPublishBlock);
       }
-      if (tournament.allLevelsLate) {
-        applyLateStylesToBlocks(tournament, null, true);
-      } else if (tournament.yellowLevel != null) {
-        applyLateStylesToBlocks(tournament, Number(tournament.yellowLevel), false);
-      }
+      applyLateRegistrationStyles(tournament);
       tournament.headerLines = buildHeaderInfoLines({
         fee: tournament.fee,
         chips: tournament.chips
@@ -5080,13 +5072,67 @@
       }
 
       tournament.allLevelsLate = false;
-      if (yellowLevel == null || Number.isNaN(yellowLevel)) return tournament;
+      if (yellowLevel == null || Number.isNaN(yellowLevel)) {
+        delete tournament.yellowLevel;
+        for (const block of tournament.blocks || []) {
+          if (block.type === "level") block.isLate = false;
+        }
+        return tournament;
+      }
       tournament.yellowLevel = yellowLevel;
       for (const block of tournament.blocks || []) {
         if (block.type !== "level" || block.levelNum == null) continue;
         block.isLate = block.levelNum > yellowLevel;
       }
       return tournament;
+    }
+
+    function parseLateLevelNumber(value) {
+      const s = String(value || "").trim();
+      if (!s) return null;
+      const m = s.match(/(?:lv\.?\s*)(\d{1,2})\s*$/i) || s.match(/^(\d{1,2})$/);
+      if (!m) return null;
+      const n = Number(m[1]);
+      return n >= 1 && n <= 50 ? n : null;
+    }
+
+    function lateCutoffLevelFromTime(tournament, lateTime) {
+      const lateMin = parseTimeToMinutes(lateTime);
+      if (lateMin == null) return null;
+      let cutoff = null;
+      for (const block of tournament.blocks || []) {
+        if (block.type !== "level" || block.levelNum == null || block.startMin == null) continue;
+        let start = block.startMin;
+        let late = lateMin;
+        if (isEarlyMorning(start)) start += 24 * 60;
+        if (isEarlyMorning(late)) late += 24 * 60;
+        if (start < late) cutoff = block.levelNum;
+      }
+      return cutoff;
+    }
+
+    function resolveLateYellowLevel(tournament, overlay = {}, markers = {}) {
+      const fromMarker = overlay.yellowLevel ?? markers.yellowLevel;
+      if (fromMarker != null && fromMarker !== "" && !Number.isNaN(Number(fromMarker))) {
+        return Number(fromMarker);
+      }
+      const fromLateLv =
+        parseLateLevelNumber(overlay.lateLevel) ??
+        parseLateLevelNumber(tournament.lateLevel);
+      if (fromLateLv != null) return fromLateLv;
+      const fromTime = lateCutoffLevelFromTime(tournament, overlay.lateTime || tournament.lateTime);
+      if (fromTime != null) return fromTime;
+      if (tournament.yellowLevel != null && tournament.yellowLevel !== "" && !Number.isNaN(Number(tournament.yellowLevel))) {
+        return Number(tournament.yellowLevel);
+      }
+      return null;
+    }
+
+    function applyLateRegistrationStyles(tournament, overlay = {}, markers = {}) {
+      if (!tournament) return tournament;
+      const yellow = resolveLateYellowLevel(tournament, overlay, markers);
+      if (yellow != null) return applyLateStylesToBlocks(tournament, yellow, false);
+      return applyLateStylesToBlocks(tournament, null, false);
     }
 
     async function fetchHtmlviewMarkers(spreadsheetId, gid, sheetName) {
@@ -5114,16 +5160,12 @@
     function buildMetaFromMarkers(markers, tournaments) {
       const meta = {};
       const knownLateLevel = tournaments[0]?.lateLevel;
+      const knownLateTime = tournaments[0]?.lateTime;
       if (knownLateLevel) meta.lateLevel = String(knownLateLevel);
+      if (knownLateTime) meta.lateTime = String(knownLateTime);
       if (markers?.blueStartRaw) meta.blueStartRaw = markers.blueStartRaw;
       if (markers?.redEndRaw) meta.redEndRaw = markers.redEndRaw;
-      if (markers?.yellowLevel != null) {
-        meta.yellowLevel = markers.yellowLevel;
-      } else if (knownLateLevel && !Number.isNaN(Number(knownLateLevel))) {
-        meta.yellowLevel = Number(knownLateLevel);
-      } else {
-        meta.allLevelsLate = true;
-      }
+      if (markers?.yellowLevel != null) meta.yellowLevel = markers.yellowLevel;
       return meta;
     }
 
@@ -5140,16 +5182,7 @@
         redEndRaw: overlay.redEndRaw
       });
 
-      if (overlay.allLevelsLate) {
-        applyLateStylesToBlocks(tournament, null, true);
-      } else {
-        const yellowLevel = overlay.yellowLevel ?? tournament.yellowLevel;
-        if (yellowLevel != null) {
-          applyLateStylesToBlocks(tournament, Number(yellowLevel), false);
-        } else {
-          applyLateStylesToBlocks(tournament, null, true);
-        }
-      }
+      applyLateRegistrationStyles(tournament, overlay);
 
       tournament.headerLines = buildHeaderInfoLines({
         fee: tournament.fee,
@@ -5706,15 +5739,41 @@
       return s;
     }
 
-    function findMetaStackColumn(grid, metaEndRow) {
-      let metaCol = -1;
-      for (let r = 0; r < metaEndRow; r++) {
-        for (let c = 0; c < (grid[r]?.length || 0); c++) {
-          const v = String(grid[r]?.[c] || "").trim();
-          if (looksLikeDateTimeCell(v)) metaCol = c;
+    function looksLikeClockTime(value) {
+      return /^\d{1,2}:\d{2}(?::\d{2})?$/.test(String(value || "").trim());
+    }
+
+    function looksLikeLateLevelValue(value) {
+      return /^\d{1,2}$/.test(String(value || "").trim()) || /^lv\.?\s*\d{1,2}$/i.test(String(value || "").trim());
+    }
+
+    function scoreParsedMetaStack(parsed) {
+      if (!parsed) return -1;
+      let score = 0;
+      if (parsed.fee) score += 8;
+      if (parsed.startRaw) score += 3;
+      if (parsed.lateLevel) score += 6;
+      if (parsed.lateTime) score += 5;
+      return score;
+    }
+
+    function collectBestPositionalMeta(grid, metaEndRow) {
+      const scanEnd = Math.min(metaEndRow || JOPT_META_SCAN_ROWS, 8);
+      let width = 0;
+      for (let r = 0; r < scanEnd; r++) {
+        width = Math.max(width, grid[r]?.length || 0);
+      }
+      let best = null;
+      let bestScore = 0;
+      for (let c = 0; c < width; c++) {
+        const parsed = parsePositionalMetaStack(grid, scanEnd, c);
+        const score = scoreParsedMetaStack(parsed);
+        if (score > bestScore) {
+          bestScore = score;
+          best = parsed;
         }
       }
-      return metaCol;
+      return best;
     }
 
     function parsePositionalMetaStack(grid, metaEndRow, metaCol) {
@@ -5742,13 +5801,13 @@
           i++;
           continue;
         }
-        if (!out.lateLevel && /^\d{1,2}$/.test(v)) {
-          out.lateLevel = v;
+        if (!out.lateLevel && looksLikeLateLevelValue(v)) {
+          out.lateLevel = String(parseLateLevelNumber(v) ?? v);
           i++;
           continue;
         }
-        if (!out.lateTime && /\d{1,2}:\d{2}/.test(v)) {
-          out.lateTime = v;
+        if (!out.lateTime && looksLikeClockTime(v)) {
+          out.lateTime = String(v).trim().replace(/^(\d{1,2}:\d{2})(?::\d{2})?$/, "$1");
           i++;
           continue;
         }
@@ -5962,7 +6021,6 @@
 
     function extractFestivalMetaFromGrid(grid) {
       const header = parseJoptFestivalHeaderRange(grid);
-      if (header.fee && header.chips) return header;
       const colMeta = parseMetadataFromColLabels(grid.colLabels);
       const meta = parseJOPTMetadata(grid);
       return {
@@ -6089,9 +6147,8 @@
         }
       }
 
-      const metaCol = findMetaStackColumn(grid, metaScanEnd);
-      if (metaCol >= 0) {
-        const positional = parsePositionalMetaStack(grid, metaScanEnd, metaCol);
+      const positional = collectBestPositionalMeta(grid, metaScanEnd);
+      if (positional) {
         if (!startRaw && positional.startRaw) startRaw = positional.startRaw;
         if (!fee && positional.fee) fee = normalizeFee(positional.fee);
         if (!chips && positional.chips) chips = positional.chips;
@@ -6254,13 +6311,7 @@
           });
         }
         tournament.allLevelsLate = tournament.allLevelsLate ?? prev.allLevelsLate;
-        if (tournament.allLevelsLate) {
-          applyLateStylesToBlocks(tournament, null, true);
-        } else if (tournament.yellowLevel != null) {
-          applyLateStylesToBlocks(tournament, Number(tournament.yellowLevel), false);
-        } else {
-          applyLateStylesToBlocks(tournament, null, true);
-        }
+        applyLateRegistrationStyles(tournament);
         list[idx] = tournament;
       } else {
         list.push(tournament);
@@ -8359,6 +8410,7 @@
         ensureFullBlocks(t);
         mergeFestivalMeta(t, festivalMeta);
         applyMetadataOverlay(t, supplementalMeta);
+        applyLateRegistrationStyles(t, { ...supplementalMeta, ...festivalMeta });
         t.sheetIndex = sheetIndex;
         t.sheetName = item.sheetName;
         const dayKey = getDayKeyForSheet(item, t);
@@ -8419,7 +8471,8 @@
 
     function gvizTextHasFestivalFee(gvizText) {
       try {
-        return !!extractFestivalMetaFromGrid(parseGvizResponse(gvizText)).fee;
+        const meta = extractFestivalMetaFromGrid(parseGvizResponse(gvizText));
+        return !!(meta.fee && (meta.lateLevel || meta.lateTime));
       } catch {
         return false;
       }
