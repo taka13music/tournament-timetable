@@ -187,11 +187,14 @@
     .event-list-item-actions {
       display: flex;
       flex-shrink: 0;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
       gap: 8px;
     }
 
-    .event-list-item-open {
+    .event-list-item-open,
+    .event-list-item-copy {
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
       color: var(--accent);
@@ -200,10 +203,18 @@
       cursor: pointer;
       padding: 6px 8px;
       font: inherit;
+      white-space: nowrap;
     }
 
-    .event-list-item-open:hover {
+    .event-list-item-open:hover,
+    .event-list-item-copy:hover:not(:disabled) {
       text-decoration: underline;
+    }
+
+    .event-list-item-copy:disabled {
+      color: var(--muted);
+      cursor: not-allowed;
+      text-decoration: none;
     }
 
     .event-list-item-delete {
@@ -1921,7 +1932,8 @@
           <span class="hour-height-label-short" aria-hidden="true">1&#26178;&#38291; (px)</span>
           <input id="hourHeight" type="number" value="60" min="30" max="120" title="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" aria-label="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" />
         </label>
-        <button type="button" id="exportSvgBtn" class="btn-secondary viewer-only" disabled title="Adobe Illustrator&#21521;&#12369;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;SVG">SVG&#20986;&#21147;</button>
+        <button type="button" id="copyTimetableBtn" class="btn-secondary" disabled title="&#38322;&#35239;&#29992;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;&#12434;&#30011;&#20687;&#12392;&#12375;&#12390;&#12467;&#12500;&#12540;">&#12467;&#12500;&#12540;</button>
+        <button type="button" id="exportSvgBtn" class="btn-secondary" disabled title="Adobe Illustrator&#21521;&#12369;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;SVG">SVG&#20986;&#21147;</button>
       </div>
     </div>
     <div class="overlap-panel surface" id="overlapPanel"></div>
@@ -2295,6 +2307,27 @@
         openBtn.textContent = "開く";
         openBtn.addEventListener("click", () => openEventDetail(event.id));
 
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "event-list-item-copy";
+        copyBtn.textContent = "URLをコピー";
+        copyBtn.disabled = !url;
+        copyBtn.title = url ? "閲覧用URLをコピー" : "大会名を入力すると閲覧URLが決まります";
+        copyBtn.addEventListener("click", async (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (!url) {
+            setStatus("先に大会名を入力してください", true);
+            return;
+          }
+          try {
+            await copyTextToClipboard(url);
+            setStatus(`閲覧URLをコピーしました: ${url}`);
+          } catch (err) {
+            setStatus(`コピーに失敗しました: ${err.message || err}`, true);
+          }
+        });
+
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "event-list-item-delete";
@@ -2306,6 +2339,7 @@
         });
 
         actions.appendChild(openBtn);
+        actions.appendChild(copyBtn);
         actions.appendChild(deleteBtn);
         row.appendChild(mainBtn);
         row.appendChild(actions);
@@ -4739,6 +4773,8 @@
       bindNowMarkerScroll();
       bindViewerResize();
       bindBoardHeaderScroll();
+      $("copyTimetableBtn")?.addEventListener("click", copyTimetableImage);
+      $("exportSvgBtn")?.addEventListener("click", exportTimetableSvg);
     }
 
     function setupViewerMode() {
@@ -4750,7 +4786,6 @@
           setStatus(formatFetchError(e), true);
         }
       });
-      $("exportSvgBtn")?.addEventListener("click", exportTimetableSvg);
       setupSharedBoardControls();
       setupViewerLiveSync();
       loadViewerData();
@@ -8518,8 +8553,10 @@
     }
 
     function setExportSvgEnabled(enabled) {
-      const btn = $("exportSvgBtn");
-      if (btn) btn.disabled = !enabled;
+      const exportBtn = $("exportSvgBtn");
+      const copyBtn = $("copyTimetableBtn");
+      if (exportBtn) exportBtn.disabled = !enabled;
+      if (copyBtn) copyBtn.disabled = !enabled;
     }
 
     function buildSvgExportFilename() {
@@ -8850,6 +8887,97 @@
 
       parts.push("</svg>");
       return { width, height, svg: parts.join("\n") };
+    }
+
+    function svgMarkupToDataUrl(svgMarkup) {
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgMarkup);
+    }
+
+    function rasterizeTimetableSvgToPng(built, scale = 2) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(built.width * scale));
+            canvas.height = Math.max(1, Math.round(built.height * scale));
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error("PNG encode failed"));
+            }, "image/png");
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error("SVG render failed"));
+        img.src = svgMarkupToDataUrl(built.svg);
+      });
+    }
+
+    async function writePngToClipboard(blob) {
+      if (!navigator.clipboard?.write || !window.ClipboardItem) {
+        throw new Error("clipboard unavailable");
+      }
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      } catch (_) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": Promise.resolve(blob) })
+        ]);
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyTimetableImage() {
+      const board = $("board");
+      if (!board || board.classList.contains("empty")) {
+        setStatus("コピーするタイムテーブルがありません", true);
+        return;
+      }
+      const btn = $("copyTimetableBtn");
+      const prevLabel = btn?.textContent;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "コピー中...";
+      }
+      try {
+        const built = buildIllustratorTimetableSvg();
+        if (!built) {
+          setStatus("コピーするタイムテーブルがありません", true);
+          return;
+        }
+        const blob = await rasterizeTimetableSvgToPng(built);
+        try {
+          await writePngToClipboard(blob);
+          setStatus("閲覧用タイムテーブルをクリップボードにコピーしました");
+        } catch (clipErr) {
+          console.warn(clipErr);
+          downloadBlob(blob, buildSvgExportFilename().replace(/\.svg$/i, ".png"));
+          setStatus("クリップボードにコピーできないため、画像をダウンロードしました", true);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(`タイムテーブルのコピーに失敗しました: ${err.message || err}`, true);
+      } finally {
+        if (btn) {
+          btn.textContent = prevLabel || "コピー";
+          btn.disabled = !Object.keys(tournamentsByDay).length;
+        }
+      }
     }
 
     function exportTimetableSvg() {
