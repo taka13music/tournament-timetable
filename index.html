@@ -1934,7 +1934,7 @@
           <span class="hour-height-label-short" aria-hidden="true">1&#26178;&#38291; (px)</span>
           <input id="hourHeight" type="number" value="60" min="30" max="120" title="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" aria-label="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" />
         </label>
-        <button type="button" id="copyTimetableBtn" class="btn-secondary" disabled title="&#38322;&#35239;&#29992;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;&#12434;&#30011;&#20687;&#12392;&#12375;&#12390;&#12467;&#12500;&#12540;">&#12467;&#12500;&#12540;</button>
+        <button type="button" id="copyTimetableBtn" class="btn-secondary" disabled title="&#38322;&#35239;&#29992;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;&#12434;&#30011;&#20687;&#12392;&#12375;&#12390;&#12467;&#12500;&#12540;">&#30011;&#20687;&#12434;&#12467;&#12500;&#12540;</button>
         <button type="button" id="exportSvgBtn" class="btn-secondary" disabled title="Adobe Illustrator&#21521;&#12369;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;SVG">SVG&#20986;&#21147;</button>
       </div>
     </div>
@@ -8969,7 +8969,7 @@
         setStatus(`タイムテーブルのコピーに失敗しました: ${err.message || err}`, true);
       } finally {
         if (btn) {
-          btn.textContent = prevLabel || "コピー";
+          btn.textContent = prevLabel || "画像をコピー";
           btn.disabled = !Object.keys(tournamentsByDay).length;
         }
       }
