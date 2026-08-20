@@ -2478,6 +2478,22 @@
       return new TextDecoder().decode(bytes);
     }
 
+    function githubFilePublicUrls(filePath) {
+      const settings = loadGithubSettings();
+      const owner = settings.owner || DEFAULT_GITHUB_SETTINGS.owner;
+      const repo = settings.repo || DEFAULT_GITHUB_SETTINGS.repo;
+      const branch = settings.branch || DEFAULT_GITHUB_SETTINGS.branch;
+      if (!owner || !repo) return [];
+      const encoded = String(filePath || "")
+        .split("/")
+        .map((part) => encodeURIComponent(part))
+        .join("/");
+      return [
+        `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encoded}`,
+        `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${encoded}`
+      ];
+    }
+
     async function fetchGithubContentsJson(filePath) {
       const settings = loadGithubSettings();
       const owner = settings.owner || DEFAULT_GITHUB_SETTINGS.owner;
@@ -2500,16 +2516,31 @@
       }
     }
 
+    async function fetchJsonFromUrl(url) {
+      const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`, {
+        cache: "no-store"
+      });
+      if (!res.ok) return null;
+      return res.json();
+    }
+
     async function fetchSharedJson(filePath) {
       let local = null;
       try {
-        const res = await fetch(`${filePath}?_=${Date.now()}`, { cache: "no-store" });
-        if (res.ok) local = await res.json();
+        local = await fetchJsonFromUrl(filePath);
       } catch (_) {}
       if (sharedJsonLooksPopulated(filePath, local)) return local;
-      const remote = await fetchGithubContentsJson(filePath);
-      if (sharedJsonLooksPopulated(filePath, remote)) return remote;
-      return remote || local;
+
+      for (const url of githubFilePublicUrls(filePath)) {
+        try {
+          const remote = await fetchJsonFromUrl(url);
+          if (sharedJsonLooksPopulated(filePath, remote)) return remote;
+        } catch (_) {}
+      }
+
+      const apiRemote = await fetchGithubContentsJson(filePath);
+      if (sharedJsonLooksPopulated(filePath, apiRemote)) return apiRemote;
+      return apiRemote || local;
     }
 
     function sharedJsonLooksPopulated(filePath, data) {

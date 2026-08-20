@@ -1,4 +1,14 @@
 {
   "version": 1,
-  "events": []
+  "selectedId": "evt-spadie-osaka-2nd",
+  "events": [
+    {
+      "id": "evt-spadie-osaka-2nd",
+      "name": "SPADIE OSAKA 2nd",
+      "slug": "spadie-osaka-2nd",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1mT9Y1FVd0l9bbyxNmYAkJYLaEK3JDCeaIb9BSJuuOv8/edit?gid=372619395",
+      "sheetStart": "Main Day 1A",
+      "sheetEnd": "Finale"
+    }
+  ]
 }
