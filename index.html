@@ -8580,7 +8580,7 @@
       BLOCK_INSET: 3,
       BLOCK_RADIUS: 4,
       ACCENT_W: 3,
-      FONT: "Helvetica, Arial, Hiragino Sans, Hiragino Kaku Gothic ProN, Meiryo, sans-serif",
+      FONT: "Helvetica, Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif",
       BG: "#fafbff",
       TIME_BG: "#f8fafc",
       COL_LINE: "#d8dee9",
@@ -8884,46 +8884,85 @@
       return { width, height, svg: parts.join("\n") };
     }
 
-    function svgMarkupToDataUrl(svgMarkup) {
-      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgMarkup);
+    function stripSvgXmlProlog(svgMarkup) {
+      return String(svgMarkup || "")
+        .replace(/^\uFEFF/, "")
+        .replace(/<\?xml[^>]*>\s*/i, "");
     }
 
-    function rasterizeTimetableSvgToPng(built, scale = 2) {
+    function asPngBlob(blob) {
+      return blob?.type === "image/png" ? blob : blob.slice(0, blob.size, "image/png");
+    }
+
+    function loadSvgImage(svgMarkup) {
+      const svg = stripSvgXmlProlog(svgMarkup);
       return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
+        const tryDataUrl = () => {
           try {
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.max(1, Math.round(built.width * scale));
-            canvas.height = Math.max(1, Math.round(built.height * scale));
-            const ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error("PNG encode failed"));
-            }, "image/png");
+            const b64 = btoa(unescape(encodeURIComponent(svg)));
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("SVG render failed"));
+            img.src = "data:image/svg+xml;base64," + b64;
           } catch (err) {
             reject(err);
           }
         };
-        img.onerror = () => reject(new Error("SVG render failed"));
-        img.src = svgMarkupToDataUrl(built.svg);
+        const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          tryDataUrl();
+        };
+        img.src = url;
       });
     }
 
-    async function writePngToClipboard(blob) {
+    function canvasToPngBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        const finish = (blob) => {
+          if (!blob) reject(new Error("PNG encode failed"));
+          else resolve(asPngBlob(blob));
+        };
+        if (canvas.toBlob) {
+          canvas.toBlob(finish, "image/png");
+          return;
+        }
+        try {
+          const dataUrl = canvas.toDataURL("image/png");
+          fetch(dataUrl).then((res) => res.blob()).then(finish).catch(reject);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    async function rasterizeTimetableSvgToPng(built, scale = 2) {
+      const img = await loadSvgImage(built.svg);
+      const maxSide = 8192;
+      const fit = Math.min(scale, maxSide / built.width, maxSide / built.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(built.width * fit));
+      canvas.height = Math.max(1, Math.round(built.height * fit));
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvasToPngBlob(canvas);
+    }
+
+    function writePngToClipboard(pngPromise) {
       if (!navigator.clipboard?.write || !window.ClipboardItem) {
-        throw new Error("clipboard unavailable");
+        return Promise.reject(new Error("clipboard unavailable"));
       }
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      } catch (_) {
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": Promise.resolve(blob) })
-        ]);
-      }
+      const pngForClipboard = Promise.resolve(pngPromise).then(asPngBlob);
+      const item = new ClipboardItem({ "image/png": pngForClipboard });
+      return navigator.clipboard.write([item]);
     }
 
     function downloadBlob(blob, filename) {
@@ -8943,30 +8982,40 @@
         setStatus("コピーするタイムテーブルがありません", true);
         return;
       }
+      const built = buildIllustratorTimetableSvg();
+      if (!built) {
+        setStatus("コピーするタイムテーブルがありません", true);
+        return;
+      }
+
       const btn = $("copyTimetableBtn");
       const prevLabel = btn?.textContent;
+      const pngPromise = rasterizeTimetableSvgToPng(built);
+      let writePromise = null;
+      try {
+        writePromise = writePngToClipboard(pngPromise);
+      } catch (err) {
+        writePromise = Promise.reject(err);
+      }
+
       if (btn) {
         btn.disabled = true;
         btn.textContent = "コピー中...";
       }
+
       try {
-        const built = buildIllustratorTimetableSvg();
-        if (!built) {
-          setStatus("コピーするタイムテーブルがありません", true);
-          return;
-        }
-        const blob = await rasterizeTimetableSvgToPng(built);
+        await writePromise;
+        setStatus("タイムテーブル画像をコピーしました。そのまま貼り付けできます。");
+      } catch (clipErr) {
+        console.warn(clipErr);
         try {
-          await writePngToClipboard(blob);
-          setStatus("閲覧用タイムテーブルをクリップボードにコピーしました");
-        } catch (clipErr) {
-          console.warn(clipErr);
+          const blob = await pngPromise;
           downloadBlob(blob, buildSvgExportFilename().replace(/\.svg$/i, ".png"));
-          setStatus("クリップボードにコピーできないため、画像をダウンロードしました", true);
+          setStatus("このブラウザでは画像コピーできないため、PNGをダウンロードしました", true);
+        } catch (err) {
+          console.error(err);
+          setStatus(`タイムテーブルのコピーに失敗しました: ${err.message || err}`, true);
         }
-      } catch (err) {
-        console.error(err);
-        setStatus(`タイムテーブルのコピーに失敗しました: ${err.message || err}`, true);
       } finally {
         if (btn) {
           btn.textContent = prevLabel || "画像をコピー";
