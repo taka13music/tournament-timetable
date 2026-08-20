@@ -193,28 +193,29 @@
       gap: 8px;
     }
 
-    .event-list-item-open,
     .event-list-item-copy {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--accent);
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      padding: 6px 8px;
       font: inherit;
+      font-size: var(--text-sm);
+      font-weight: var(--font-bold);
+      color: #fff;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
       white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.22);
     }
 
-    .event-list-item-open:hover,
     .event-list-item-copy:hover:not(:disabled) {
-      text-decoration: underline;
+      filter: brightness(1.05);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
     .event-list-item-copy:disabled {
-      color: var(--muted);
+      opacity: 0.55;
       cursor: not-allowed;
-      text-decoration: none;
+      box-shadow: none;
     }
 
     .event-list-item-delete {
@@ -2301,16 +2302,10 @@
         const actions = document.createElement("div");
         actions.className = "event-list-item-actions";
 
-        const openBtn = document.createElement("button");
-        openBtn.type = "button";
-        openBtn.className = "event-list-item-open";
-        openBtn.textContent = "開く";
-        openBtn.addEventListener("click", () => openEventDetail(event.id));
-
         const copyBtn = document.createElement("button");
         copyBtn.type = "button";
         copyBtn.className = "event-list-item-copy";
-        copyBtn.textContent = "URLをコピー";
+        copyBtn.textContent = "閲覧用URLをコピー";
         copyBtn.disabled = !url;
         copyBtn.title = url ? "閲覧用URLをコピー" : "大会名を入力すると閲覧URLが決まります";
         copyBtn.addEventListener("click", async (ev) => {
@@ -2338,7 +2333,6 @@
           deleteEventById(event.id);
         });
 
-        actions.appendChild(openBtn);
         actions.appendChild(copyBtn);
         actions.appendChild(deleteBtn);
         row.appendChild(mainBtn);
