@@ -340,11 +340,6 @@
       grid-column: 1 / -1;
     }
 
-    .publish-advanced {
-      margin-top: 4px;
-    }
-
-    .publish-advanced summary,
     .editor-settings-details summary {
       cursor: pointer;
       font-size: var(--text-sm);
@@ -360,14 +355,6 @@
 
     .editor-settings-details + .editor-settings-details {
       margin-top: 4px;
-    }
-
-    .publish-advanced-body {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-      align-items: center;
     }
 
     .publish-result-url {
@@ -1827,7 +1814,7 @@
       <div class="event-list" id="eventList"></div>
       <div class="event-list-empty surface" id="eventListEmpty" hidden>
         &#12414;&#12384;&#22823;&#20250;&#12364;&#12354;&#12426;&#12414;&#12379;&#12435;&#12290;<br />
-        &#12300;&#26032;&#35215;&#20316;&#25104;&#12301;&#12391;&#22823;&#20250;&#12434;&#20316;&#12387;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;
+        &#12300;&#26032;&#35215;&#20316;&#25104;&#12301;&#12391;&#22823;&#20250;&#12434;&#20316;&#12387;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;&#20182;&#12398;&#31471;&#26411;&#12398;&#22823;&#20250;&#12434;&#35211;&#12427;&#12394;&#12425;&#12289;&#20445;&#23384;&#20808;&#12398; Token &#12434;&#20837;&#12428;&#12390;&#12363;&#12425;&#12300;&#20844;&#38283;&#12301;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;
       </div>
     </div>
 
@@ -1857,8 +1844,8 @@
         </div>
 
         <details class="editor-settings-details" id="githubSaveDetails">
-          <summary>&#20445;&#23384;&#20808;&#12398;&#35373;&#23450;&#65288;&#21021;&#22238;&#12398;&#12415;&#65289;</summary>
-          <p class="hint" style="margin: 10px 0 8px;">GitHub Token&#65288;repo&#27161;&#38480;&#65289;&#12434;&#19968;&#24230;&#20837;&#21147;&#12377;&#12427;&#12392;&#12289;&#22823;&#20250;&#12487;&#12540;&#12479;&#12364;&#12469;&#12540;&#12496;&#12540;&#12395;&#20445;&#23384;&#12373;&#12428;&#12289;&#20182;&#12398;&#31471;&#26411;&#12391;&#12397;&#38322;&#35239;URL&#12364;&#38283;&#12369;&#12414;&#12377;&#12290;</p>
+          <summary>&#20445;&#23384;&#20808;&#12398;&#35373;&#23450;&#65288;&#20182;&#12398;&#31471;&#26411;&#29992;&#12539;&#4efb;&#24847;&#65289;</summary>
+          <p class="hint" style="margin: 10px 0 8px;">&#12371;&#12398;&#31471;&#26411;&#12384;&#12369;&#12391;&#35211;&#12427;&#12394;&#12425;&#19981;&#35201;&#12391;&#12377;&#12290;&#20182;&#12398;&#31471;&#26411;&#12398;&#38322;&#35239;URL&#12391;&#38283;&#12367;&#12394;&#12425;&#12289;&#21021;&#22238;&#12384;&#12369; GitHub Token&#65288;repo&#27161;&#38480;&#65289;&#12434;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;</p>
           <div class="github-settings" id="githubSettings">
             <div class="field field-token">
               <label for="githubToken">GitHub Token&#65288;repo&#27161;&#38480;&#65289;</label>
@@ -1902,27 +1889,10 @@
           </div>
         </details>
 
-        <details class="editor-settings-details publish-advanced">
-          <summary>&#19978;&#32026;&#32773;&#21521;&#12369;: Zip &#29983;&#25104;&#65288;Netlify &#25163;&#21205;&#12450;&#12483;&#12503;&#29992;&#65289;</summary>
-          <div class="publish-advanced-body">
-            <input
-              id="viewerZipName"
-              type="text"
-              value=""
-              placeholder="&#20363;: tournament.zip"
-              spellcheck="false"
-              title="Zip &#12501;&#12449;&#12452;&#12523;&#21517;"
-              aria-label="Zip &#12501;&#12449;&#12452;&#12523;&#21517;"
-            />
-            <button type="button" id="publishUrlBtn" class="btn-secondary btn-action">Zip &#29983;&#25104;</button>
-          </div>
-        </details>
-
         <div class="controls-detail-actions" id="eventLoadActions">
           <button type="button" id="fullLoadBtn" class="btn-primary btn-action" title="シートからタイムテーブルを新規読み込み">&#20844;&#38283;</button>
           <button type="button" id="refreshBtn" class="btn-accent btn-action" hidden title="変更点だけ差分更新">&#26356;&#26032;</button>
-          <button type="button" id="saveSharedBtn" class="btn-primary btn-action" title="他の端末でも見られるようにサーバーへ保存">&#20445;&#23384;</button>
-          <span class="hint" id="eventLoadHint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#12471;&#12540;&#12488;&#12363;&#12425;&#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#20445;&#23384;: &#20182;&#12398;&#31471;&#26411;&#12391;&#12418;&#35211;&#12425;&#12428;&#12427;</span>
+          <span class="hint" id="eventLoadHint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#12471;&#12540;&#12488;&#12363;&#12425;&#26032;&#35215;&#35501;&#12415;&#36796;&#12415;&#12290;&#20182;&#12398;&#31471;&#26411;&#12391;&#35211;&#12427;&#12394;&#12425; Token &#12434;&#35373;&#23450;</span>
         </div>
       </div>
     </div>
@@ -1966,14 +1936,6 @@
         <p class="publish-deploy-block-title">&#20844;&#38283;&#12398;&#27969;&#12428;</p>
         <ol class="publish-steps" id="publishWorkflowSteps"></ol>
       </div>
-      <div class="publish-deploy-block" id="publishDeployBlock" hidden>
-        <p class="publish-deploy-block-title">Netlify &#12391;&#12398;&#20844;&#38283;&#25163;&#38918;&#65288;&#19978;&#32026;&#32773;&#21521;&#12369;&#65289;</p>
-        <ol class="publish-steps" id="publishSteps"></ol>
-      </div>
-      <div class="publish-deploy-block" id="publishUpdateBlock" hidden>
-        <p class="publish-deploy-block-title">&#26356;&#26032;&#26178;</p>
-        <ol class="publish-steps" id="publishUpdateSteps"></ol>
-      </div>
       <div class="publish-modal-actions">
         <button type="button" class="btn-secondary" id="closePublishModalBtn">&#38281;&#12376;&#12427;</button>
       </div>
@@ -2005,14 +1967,10 @@
     let loadInProgress = false;
     let exportInProgress = false;
     let activeLoadMode = null;
-    const PUBLISH_BTN_LABEL = "Zip \u751f\u6210";
-    const PUBLISH_BTN_BUSY_LABEL = "\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u4e2d\u2026";
     const FULL_LOAD_BTN_LABEL = "\u516c\u958b";
     const FULL_LOAD_BTN_BUSY_LABEL = "\u8aad\u307f\u8fbc\u307f\u4e2d\u2026";
     const DIFF_UPDATE_BTN_LABEL = "\u66f4\u65b0";
     const DIFF_UPDATE_BTN_BUSY_LABEL = "\u5dee\u5206\u66f4\u65b0\u4e2d\u2026";
-    const SAVE_SHARED_BTN_LABEL = "\u4fdd\u5b58";
-    const SAVE_SHARED_BTN_BUSY_LABEL = "\u4fdd\u5b58\u4e2d\u2026";
     const GITHUB_SETTINGS_KEY = "tournamentGithubPublishSettings";
     const DEFAULT_GITHUB_SETTINGS = {
       token: "",
@@ -2077,7 +2035,6 @@
     const PUBLISHED_JSON_PATH = "published/timetable.json";
     const EVENTS_JSON_PATH = "events.json";
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
-    const VIEWER_DEPLOY_ZIP_DEFAULT = "viewer.zip";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
     const TIMETABLE_CACHE_VERSION = 1;
@@ -2116,10 +2073,15 @@
     }
 
     function createEmptyEvent(partial = {}) {
+      const name = String(partial.name || "").trim();
+      const slug =
+        normalizeEventSlug(partial.slug) ||
+        normalizeEventSlug(name) ||
+        "event";
       return {
         id: partial.id || createEventId(),
-        name: String(partial.name || "").trim(),
-        slug: normalizeEventSlug(partial.name || partial.slug || "") || "event",
+        name,
+        slug,
         sheetUrl: String(partial.sheetUrl || "").trim(),
         sheetStart: String(partial.sheetStart || "").trim(),
         sheetEnd: String(partial.sheetEnd || "").trim()
@@ -2157,10 +2119,6 @@
         sheetStart: event?.sheetStart || "",
         sheetEnd: event?.sheetEnd || ""
       });
-      const zipEl = $("viewerZipName");
-      if (zipEl && event?.slug && !zipEl.value.trim()) {
-        zipEl.placeholder = `${event.slug}.zip`;
-      }
       updateEventViewUrlHint(event);
     }
 
@@ -2300,6 +2258,17 @@
           return;
         }
 
+        const published = await tryRestorePublishedTimetable(getSelectedEvent());
+        if (published) {
+          const when = formatTimetableCacheSavedAt(published.publishedAt);
+          setStatus(
+            when
+              ? `他の端末で保存されたタイムテーブルを表示しています（${when}）。最新にするには「更新」を押してください。`
+              : "他の端末で保存されたタイムテーブルを表示しています。最新にするには「更新」を押してください。"
+          );
+          return;
+        }
+
         if (autoLoad && String($("sheetUrl")?.value || "").trim()) {
           try {
             await refreshTimetable();
@@ -2346,6 +2315,7 @@
       renderEventList();
       setEditorHash("event", event.id);
       setStatus("大会を作成しました。名前とシートを設定してください。");
+      maybeSaveEventsRegistryToGithub();
       setTimeout(() => $("eventName")?.focus(), 0);
     }
 
@@ -2500,6 +2470,58 @@
       });
     }
 
+    function decodeGithubFileContent(content) {
+      const binary = atob(String(content || "").replace(/\n/g, ""));
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function fetchGithubContentsJson(filePath) {
+      const settings = loadGithubSettings();
+      const owner = settings.owner || DEFAULT_GITHUB_SETTINGS.owner;
+      const repo = settings.repo || DEFAULT_GITHUB_SETTINGS.repo;
+      const branch = settings.branch || DEFAULT_GITHUB_SETTINGS.branch;
+      if (!owner || !repo) return null;
+      const headers = { Accept: "application/vnd.github+json" };
+      if (settings.token) headers.Authorization = `Bearer ${settings.token}`;
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`,
+          { cache: "no-store", headers }
+        );
+        if (!res.ok) return null;
+        const body = await res.json();
+        if (!body?.content) return null;
+        return JSON.parse(decodeGithubFileContent(body.content));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function fetchSharedJson(filePath) {
+      let local = null;
+      try {
+        const res = await fetch(`${filePath}?_=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) local = await res.json();
+      } catch (_) {}
+      if (sharedJsonLooksPopulated(filePath, local)) return local;
+      const remote = await fetchGithubContentsJson(filePath);
+      if (sharedJsonLooksPopulated(filePath, remote)) return remote;
+      return remote || local;
+    }
+
+    function sharedJsonLooksPopulated(filePath, data) {
+      if (!data) return false;
+      if (filePath === EVENTS_JSON_PATH || String(filePath).endsWith("events.json")) {
+        return Array.isArray(data.events) && data.events.length > 0;
+      }
+      if (String(filePath).includes("published/")) {
+        if (data.v === 4 || data.v === 5) return Array.isArray(data.s) && data.s.length > 0;
+        return !!(data.tournamentsByDay && Object.keys(data.tournamentsByDay).length);
+      }
+      return true;
+    }
+
     function showAppPublishModal({ event, viewUrl, commitUrl }) {
       const modal = $("publishModal");
       $("publishModalTitle").textContent = "保存しました";
@@ -2510,8 +2532,8 @@
           ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">保存内容を確認</a></span>`
           : "");
       $("publishWorkflowSteps").innerHTML = `
-        <li>管理画面で大会を読み込む</li>
-        <li>「保存」でサーバーへ書き出す</li>
+        <li>管理画面で大会を「公開」する</li>
+        <li>Token 設定済みならサーバーへ自動保存される</li>
         <li>同じ閲覧URLを他の端末で開く</li>
       `;
       const wrap = $("publishResultUrlWrap");
@@ -2522,10 +2544,6 @@
         code.textContent = viewUrl || "";
         openLink.href = viewUrl || "#";
       }
-      const deployBlock = $("publishDeployBlock");
-      const updateBlock = $("publishUpdateBlock");
-      if (deployBlock) deployBlock.hidden = true;
-      if (updateBlock) updateBlock.hidden = true;
       modal.classList.add("visible");
       modal.setAttribute("aria-hidden", "false");
     }
@@ -2573,41 +2591,55 @@
       }
     }
 
-    async function publishEventToGithub() {
+    async function maybeSaveSharedDataAfterLoad({ announceSuccess = false } = {}) {
       if (exportInProgress) return;
-      if (loadInProgress) {
-        setStatus("読み込み中です。完了してから「保存」してください", true);
-        return;
-      }
       const missingSheets = getMissingScheduledSheetNames();
-      if (missingSheets.length) {
+      if (missingSheets.length) return;
+      if (!Object.keys(tournamentsByDay).length) return;
+
+      const settings = loadGithubSettings();
+      const previous = String($("status")?.textContent || "").trim();
+      if (!settings.token) {
         setStatus(
-          `未読み込みのシートが ${missingSheets.length} 件あります。もう一度「更新」してください`,
-          true
+          previous
+            ? `${previous} / 他の端末で見るには「保存先の設定」に Token を入れてください`
+            : "他の端末で見るには「保存先の設定」に Token を入れてください"
         );
         return;
       }
       try {
-        await saveSharedDataToGithub({ announce: true });
-      } catch (e) {
-        setStatus(`保存に失敗しました: ${e.message || e}`, true);
+        await saveSharedDataToGithub({ announce: announceSuccess, skipBusy: !announceSuccess });
+        if (!announceSuccess) {
+          setStatus(
+            previous
+              ? `${previous} / 他の端末向けに自動保存しました`
+              : "他の端末向けに自動保存しました"
+          );
+        }
+      } catch (err) {
+        console.warn("shared save after load failed", err);
+        setStatus(
+          previous
+            ? `${previous} / 自動保存に失敗しました: ${err.message || err}`
+            : `自動保存に失敗しました: ${err.message || err}`,
+          true
+        );
       }
     }
 
-    async function maybeSaveSharedDataAfterLoad() {
+    async function maybeSaveEventsRegistryToGithub() {
       const settings = loadGithubSettings();
-      if (!settings.token || !Object.keys(tournamentsByDay).length) return;
-      const previous = String($("status")?.textContent || "").trim();
+      if (!settings.token || IS_VIEWER_MODE) return;
       try {
-        await saveSharedDataToGithub({ announce: false, skipBusy: true });
-        setStatus(
-          previous
-            ? `${previous} / サーバーへも保存しました`
-            : "サーバーへ保存しました"
+        const eventsText = buildEventsJsonText();
+        await githubPutTextFile(
+          settings,
+          EVENTS_JSON_PATH,
+          eventsText,
+          "save: events registry"
         );
       } catch (err) {
-        console.warn("shared save after load failed", err);
-        if (previous) setStatus(previous);
+        console.warn("events registry save failed", err);
       }
     }
 
@@ -2858,6 +2890,67 @@
       return payload;
     }
 
+    function decodePublishedJson(raw) {
+      if (!raw) return null;
+      return raw && (raw.v === 4 || raw.v === 5) ? expandPublishPayload(raw) : raw;
+    }
+
+    async function fetchPublishedPayloadForEvent(event) {
+      const slug = normalizeEventSlug(event?.slug);
+      const paths = [];
+      if (slug) paths.push(`published/${slug}.json`);
+      paths.push(PUBLISHED_JSON_PATH);
+      for (const path of [...new Set(paths)]) {
+        const raw = await fetchSharedJson(path);
+        const decoded = decodePublishedJson(raw);
+        if (!hasPublishSnapshot(decoded)) continue;
+        if (slug) {
+          const payloadSlug = normalizeEventSlug(decoded?.eventId || decoded?.eventSlug || "");
+          if (payloadSlug && payloadSlug !== slug) continue;
+        }
+        return decoded;
+      }
+      return null;
+    }
+
+    function applySharedTimetableToEditor(decoded, event) {
+      if (!decoded) return false;
+      const sheet = {
+        sheetUrl: decoded.sheetUrl || event?.sheetUrl || "",
+        sheetStart: decoded.sheetStart || event?.sheetStart || "",
+        sheetEnd: decoded.sheetEnd || event?.sheetEnd || ""
+      };
+      if (sheet.sheetUrl || sheet.sheetStart || sheet.sheetEnd) {
+        applySheetConfigToDom(sheet);
+        if (event) {
+          event.sheetUrl = sheet.sheetUrl;
+          event.sheetStart = sheet.sheetStart;
+          event.sheetEnd = sheet.sheetEnd;
+        }
+      }
+      applyPublishPayload(decoded);
+      lastLoadContext = getLoadContextKey(sheet.sheetUrl, sheet.sheetStart, sheet.sheetEnd);
+      loadedFromSheet = true;
+      renderDayTabs();
+      renderBoard();
+      finishOverlapRestore({
+        selectedDay,
+        overlapHighlight: decoded.overlapHighlight || { mode: "none", bandId: null },
+        overlapBandKey: decoded.overlapBandKey || null
+      });
+      setExportSvgEnabled(true);
+      setPublishButtonState();
+      if (event?.id) persistTimetableCache(event.id);
+      return hasPublishSnapshot(decoded);
+    }
+
+    async function tryRestorePublishedTimetable(event) {
+      const decoded = await fetchPublishedPayloadForEvent(event);
+      if (!decoded) return null;
+      if (!applySharedTimetableToEditor(decoded, event)) return null;
+      return decoded;
+    }
+
     function formatTimetableCacheSavedAt(value) {
       if (!value) return "";
       const date = new Date(value);
@@ -2887,19 +2980,13 @@
     }
 
     async function fetchEventsJson() {
-      try {
-        const res = await fetch(`${EVENTS_JSON_PATH}?_=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data || !Array.isArray(data.events)) return null;
-        return {
-          version: 1,
-          events: data.events.map((event) => createEmptyEvent(event)),
-          selectedId: data.selectedId || null
-        };
-      } catch (_) {
-        return null;
-      }
+      const data = await fetchSharedJson(EVENTS_JSON_PATH);
+      if (!data || !Array.isArray(data.events)) return null;
+      return {
+        version: 1,
+        events: data.events.map((event) => createEmptyEvent(event)),
+        selectedId: data.selectedId || null
+      };
     }
 
     function mergeEventRegistries(base, overlay) {
@@ -2975,6 +3062,7 @@
         const viewUrl = buildEventViewUrl(selected);
         setStatus(`大会「${selected.name}」を保存しました（閲覧: ${viewUrl}）`);
       }
+      maybeSaveEventsRegistryToGithub();
       return selected;
     }
 
@@ -2994,6 +3082,7 @@
       persistEventRegistry();
       deleteTimetableCache(target.id);
       renderEventList();
+      maybeSaveEventsRegistryToGithub();
       const route = parseEditorHash();
       if (route.view === "event" && route.eventId === target.id) {
         setEditorHash("list");
@@ -3038,7 +3127,9 @@
         eventRegistry.selectedId = eventRegistry.events[0].id;
       }
       for (const event of eventRegistry.events) {
-        event.slug = uniqueEventSlug(event.name, event.id);
+        if (!normalizeEventSlug(event.slug)) {
+          event.slug = uniqueEventSlug(event.name, event.id);
+        }
       }
       persistEventRegistry();
       renderEventList();
@@ -3076,24 +3167,6 @@
           console.warn(err);
         });
       });
-    }
-
-    function sanitizeViewerZipFileName(raw) {
-      let name = String(raw || "").trim();
-      if (!name) return "";
-      name = name
-        .replace(/[\\/:*?"<>|]+/g, "-")
-        .replace(/\s+/g, "-")
-        .replace(/^\.+/, "")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
-      if (!name) return "";
-      if (!/\.zip$/i.test(name)) name += ".zip";
-      return name.slice(0, 120);
-    }
-
-    function getViewerZipNameInput() {
-      return String($("viewerZipName")?.value || "").trim();
     }
 
     function getLegacyPublishedPath(slug) {
@@ -3832,456 +3905,6 @@
       return JSON.stringify(compact);
     }
 
-    const VIEWER_DEPLOY_REDIRECTS = "/    /index.html    200\n/view.html    /index.html    200\n";
-    const VIEWER_DEPLOY_VIEW_HTML = [
-      "<!DOCTYPE html>",
-      '<html lang="ja">',
-      "<head>",
-      '  <meta charset="UTF-8" />',
-      '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-      "  <title>\u30c8\u30fc\u30ca\u30e1\u30f3\u30c8 \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09</title>",
-      "  <scr" + "ipt>",
-      "    (function () {",
-      "      const params = new URLSearchParams(location.search);",
-      '      params.set("mode", "view");',
-      '      location.replace("/?" + params.toString());',
-      "    })();",
-      "  </scr" + "ipt>",
-      "</" + "head>",
-      "<body>",
-      "  <p>\u8aad\u307f\u8fbc\u307f\u4e2d...</p>",
-      "</" + "body>",
-      "</" + "html>",
-      ""
-    ].join("\n");
-
-    const VIEWER_DEPLOY_NETLIFY_TOML = `[build]
-  publish = "."
-  command = "echo 'Static site - no build step'"
-
-[[headers]]
-  for = "/published/*"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/view.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-`;
-
-    const VIEWER_DEPLOY_FALLBACKS = {
-      "view.html": VIEWER_DEPLOY_VIEW_HTML,
-      "netlify.toml": VIEWER_DEPLOY_NETLIFY_TOML,
-      "_redirects": VIEWER_DEPLOY_REDIRECTS
-    };
-
-    function splitViewerHtmlAtHead(html) {
-      const source = String(html || "");
-      const match = source.match(/<\/head>/i);
-      if (!match || match.index < 0) {
-        return { head: source, afterHead: "" };
-      }
-      return {
-        head: source.slice(0, match.index),
-        afterHead: source.slice(match.index + match[0].length)
-      };
-    }
-
-    function getViewerHtmlAfterHead(html) {
-      return splitViewerHtmlAtHead(html).afterHead;
-    }
-
-    function getViewerBodyTag(html) {
-      const afterHead = getViewerHtmlAfterHead(html);
-      if (!afterHead) return "";
-      const beforeScript = afterHead.split(/<script\b/i)[0];
-      const match = beforeScript.match(/<body\b[^>]*>/i);
-      return match ? match[0] : "";
-    }
-
-    function buildViewerModeBodyTag(bodyTag) {
-      if (!bodyTag || /\bviewer-mode\b/.test(bodyTag)) return bodyTag;
-      if (/^<body\s*>$/i.test(bodyTag)) {
-        return '<body class="viewer-mode">';
-      }
-      if (/class=/i.test(bodyTag)) {
-        return bodyTag.replace(
-          /class=(["'])([^"']*)\1/i,
-          (classMatch, quote, value) => `class=${quote}${value} viewer-mode${quote}`
-        );
-      }
-      return bodyTag.replace(/<body(\s[^>]*)>/i, `<body$1 class="viewer-mode">`);
-    }
-
-    function ensureViewerModeBodyClass(html) {
-      const source = String(html || "");
-      const { head, afterHead } = splitViewerHtmlAtHead(source);
-      if (!afterHead) return source;
-
-      const scriptIndex = afterHead.search(/<script\b/i);
-      const beforeScript = scriptIndex >= 0 ? afterHead.slice(0, scriptIndex) : afterHead;
-      const fromScript = scriptIndex >= 0 ? afterHead.slice(scriptIndex) : "";
-      const bodyTag = beforeScript.match(/<body\b[^>]*>/i)?.[0] || "";
-      const newBodyTag = buildViewerModeBodyTag(bodyTag);
-      if (!bodyTag || newBodyTag === bodyTag) {
-        return source;
-      }
-
-      const newBeforeScript = beforeScript.replace(bodyTag, newBodyTag);
-      return head + "</head>" + newBeforeScript + fromScript;
-    }
-
-    function prepareViewerDeployIndexHtml(html) {
-      let out = ensureViewerModeBodyClass(html);
-      const headHtml = out.split("</head>", 1)[0];
-      if (!headHtml.includes("<!--viewer-deploy-boot-->")) {
-        const buildStamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-        const boot =
-          `  <!--viewer-build:${buildStamp}-->\n` +
-          "  <!--viewer-deploy-boot-->\n" +
-          '  <scr' +
-          'ipt>window.APP_MODE = "view";</scr' +
-          'ipt>\n';
-        out = out.replace(/<\/head>/i, boot + "</head>", 1);
-      }
-      out = out.replace(
-        /<title>[^<]*<\/title>/i,
-        "<title>\u30c8\u30fc\u30ca\u30e1\u30f3\u30c8 \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09</title>",
-        1
-      );
-      return finalizeViewerDeployIndexHtml(out);
-    }
-
-    async function fetchViewerDeployIndexSource() {
-      if (!IS_VIEWER_MODE && location.protocol.startsWith("http")) {
-        try {
-          const res = await fetch(new URL("index.html", location.href), { cache: "no-store" });
-          if (res.ok) return await res.text();
-        } catch (_) {}
-      }
-      return fetchViewerDeployText("index.html");
-    }
-
-    async function buildViewerDeployIndexHtml() {
-      const raw = await fetchViewerDeployIndexSource();
-      const prepared = prepareViewerDeployIndexHtml(finalizeViewerDeployIndexHtml(raw));
-      return validateViewerDeployIndexHtml(finalizeViewerDeployIndexHtml(prepared));
-    }
-
-    function getViewerMainScriptOpenMatch(html) {
-      const afterHead = getViewerHtmlAfterHead(html);
-      const match = afterHead.match(/<script>\s*\n\s*const APP_MODE/);
-      if (!match) return null;
-      const headEnd = String(html || "").length - afterHead.length;
-      return { index: headEnd + match.index, 0: match[0] };
-    }
-
-    function getViewerBodyCloseIndex(html) {
-      return String(html || "").toLowerCase().lastIndexOf("</body>");
-    }
-
-    function getViewerMainScriptCloseEnd(html) {
-      const scriptClose = "</scr" + "ipt>";
-      const openMatch = getViewerMainScriptOpenMatch(html);
-      if (!openMatch) return -1;
-      const bodyClose = getViewerBodyCloseIndex(html);
-      const regionEnd = bodyClose >= 0 ? bodyClose : String(html || "").length;
-      const region = String(html || "").slice(openMatch.index, regionEnd);
-      const relativeClose = region.lastIndexOf(scriptClose);
-      if (relativeClose < 0) return -1;
-      return openMatch.index + relativeClose + scriptClose.length;
-    }
-
-    function getViewerHtmlTailAfterMainScript(html) {
-      const afterMainScript = getViewerMainScriptCloseEnd(html);
-      if (afterMainScript < 0) return String(html || "");
-      const bodyClose = getViewerBodyCloseIndex(html);
-      const tailEnd = bodyClose >= 0 ? bodyClose : String(html || "").length;
-      return String(html || "").slice(afterMainScript, tailEnd).trim();
-    }
-
-    function finalizeViewerDeployIndexHtml(html) {
-      if (window.ViewerDeploy?.finalizeViewerDeployIndexHtml) {
-        return window.ViewerDeploy.finalizeViewerDeployIndexHtml(html);
-      }
-      if (typeof window.__sanitizeViewerDeploySource === "function") {
-        return window.__sanitizeViewerDeploySource(html);
-      }
-      let out = String(html || "");
-      out = out.replace(
-        /'  <script>window\.APP_MODE = "view";<\/script>\\n'/g,
-        "'  <scr' + 'ipt>window.APP_MODE = \"view\";</scr' + 'ipt>\\n'"
-      );
-      out = out.replace(
-        /\n  <script>window\.APP_MODE = "view";<\/script>\n/g,
-        "\n  <scr" + "ipt>window.APP_MODE = \"view\";</scr" + "ipt>\n"
-      );
-      const openMatch = getViewerMainScriptOpenMatch(out);
-      const bodyClose = getViewerBodyCloseIndex(out);
-      if (openMatch && bodyClose >= 0) {
-        const scriptClose = "</scr" + "ipt>";
-        const region = out.slice(openMatch.index, bodyClose);
-        if (!region.includes(scriptClose)) {
-          out = out.slice(0, bodyClose) + "\n  " + scriptClose + "\n" + out.slice(bodyClose);
-        }
-      }
-      return out;
-    }
-
-    function sanitizeViewerDeploySource(html) {
-      return finalizeViewerDeployIndexHtml(html);
-    }
-
-    function validateViewerDeployIndexHtml(html) {
-      const source = finalizeViewerDeployIndexHtml(html);
-      const head = source.split("</head>", 1)[0];
-      const bodyTag = getViewerBodyTag(source);
-      const errors = [];
-      if (!head.includes("<!--viewer-deploy-boot-->")) {
-        errors.push("viewer \u8d77\u52d5\u30b9\u30af\u30ea\u30d7\u30c8\u304c\u3042\u308a\u307e\u305b\u3093");
-      }
-      if (!bodyTag || !/\bviewer-mode\b/.test(bodyTag)) {
-        errors.push("body.viewer-mode \u304c\u3042\u308a\u307e\u305b\u3093");
-      }
-      if (!getViewerMainScriptOpenMatch(source)) {
-        errors.push("\u30e1\u30a4\u30f3 script \u304c\u3042\u308a\u307e\u305b\u3093");
-      } else if (getViewerMainScriptCloseEnd(source) < 0) {
-        errors.push("script \u304c\u9589\u3058\u3089\u308c\u3066\u3044\u307e\u305b\u3093");
-      } else {
-        const tail = getViewerHtmlTailAfterMainScript(source);
-        if (/setupViewerMode|\$\{escapeHtml|function\s+prepareViewerDeployIndexHtml/.test(tail)) {
-          errors.push("JS \u304c\u30da\u30fc\u30b8\u4e0b\u90e8\u306b\u6f0f\u308c\u51fa\u3057\u3066\u3044\u307e\u3059");
-        }
-      }
-      if (errors.length) {
-        throw new Error(
-          `\u95b2\u89a7\u7528 index.html \u306e\u691c\u8a3c\u306b\u5931\u6557: ${errors.join("\u3001")}\u3002\u7ba1\u7406\u753b\u9762\u3092\u518d\u8aad\u307f\u8fbc\u307f\u3057\u3066\u304b\u3089\u300c\u751f\u6210\u300d\u3059\u308b\u304b\u3001./build-viewer-zip.sh \u3092\u4f7f\u3063\u3066\u304f\u3060\u3055\u3044\u3002`
-        );
-      }
-      return source;
-    }
-
-    async function getViewerDeployIndexHtml() {
-      return buildViewerDeployIndexHtml();
-    }
-
-    function buildPublishedZipEntries(jsonText, publishedPath) {
-      const path = publishedPath || PUBLISHED_JSON_PATH;
-      const entries = [
-        {
-          name: path,
-          data: new TextEncoder().encode(jsonText)
-        },
-        {
-          name: EVENTS_JSON_PATH,
-          data: new TextEncoder().encode(buildEventsJsonText())
-        }
-      ];
-      if (path !== PUBLISHED_JSON_PATH) {
-        entries.push({
-          name: PUBLISHED_JSON_PATH,
-          data: new TextEncoder().encode(jsonText)
-        });
-      }
-      return entries;
-    }
-
-    const ZIP_CRC32_TABLE = (() => {
-      const table = new Uint32Array(256);
-      for (let i = 0; i < 256; i++) {
-        let c = i;
-        for (let j = 0; j < 8; j++) {
-          c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[i] = c >>> 0;
-      }
-      return table;
-    })();
-
-    function crc32Bytes(data) {
-      let crc = 0xffffffff;
-      for (let i = 0; i < data.length; i++) {
-        crc = ZIP_CRC32_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
-      }
-      return (crc ^ 0xffffffff) >>> 0;
-    }
-
-    function createZipBlob(entries) {
-      const localParts = [];
-      const centralParts = [];
-      let offset = 0;
-
-      for (const { name, data } of entries) {
-        const nameBytes = new TextEncoder().encode(name);
-        const crc = crc32Bytes(data);
-
-        const localHeader = new Uint8Array(30 + nameBytes.length);
-        const localView = new DataView(localHeader.buffer);
-        localView.setUint32(0, 0x04034b50, true);
-        localView.setUint16(4, 20, true);
-        localView.setUint16(6, 0, true);
-        localView.setUint16(8, 0, true);
-        localView.setUint16(10, 0, true);
-        localView.setUint16(12, 0, true);
-        localView.setUint32(14, crc, true);
-        localView.setUint32(18, data.length, true);
-        localView.setUint32(22, data.length, true);
-        localView.setUint16(26, nameBytes.length, true);
-        localView.setUint16(28, 0, true);
-        localHeader.set(nameBytes, 30);
-        localParts.push(localHeader, data);
-
-        const centralHeader = new Uint8Array(46 + nameBytes.length);
-        const centralView = new DataView(centralHeader.buffer);
-        centralView.setUint32(0, 0x02014b50, true);
-        centralView.setUint16(4, 20, true);
-        centralView.setUint16(6, 20, true);
-        centralView.setUint16(8, 0, true);
-        centralView.setUint16(10, 0, true);
-        centralView.setUint16(12, 0, true);
-        centralView.setUint16(14, 0, true);
-        centralView.setUint32(16, crc, true);
-        centralView.setUint32(20, data.length, true);
-        centralView.setUint32(24, data.length, true);
-        centralView.setUint16(28, nameBytes.length, true);
-        centralView.setUint16(30, 0, true);
-        centralView.setUint16(32, 0, true);
-        centralView.setUint16(34, 0, true);
-        centralView.setUint16(36, 0, true);
-        centralView.setUint32(38, 0, true);
-        centralView.setUint32(42, offset, true);
-        centralHeader.set(nameBytes, 46);
-        centralParts.push(centralHeader);
-
-        offset += localHeader.length + data.length;
-      }
-
-      const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
-      const endRecord = new Uint8Array(22);
-      const endView = new DataView(endRecord.buffer);
-      endView.setUint32(0, 0x06054b50, true);
-      endView.setUint16(8, entries.length, true);
-      endView.setUint16(10, entries.length, true);
-      endView.setUint32(12, centralSize, true);
-      endView.setUint32(16, offset, true);
-      endView.setUint16(20, 0, true);
-
-      return new Blob([...localParts, ...centralParts, endRecord], { type: "application/zip" });
-    }
-
-    async function fetchViewerDeployText(path) {
-      const bases = [];
-      if (!IS_VIEWER_MODE && location.protocol.startsWith("http")) {
-        bases.push(new URL("./", location.href).href);
-      }
-      bases.push(`${EDITOR_SITE_ORIGIN.replace(/\/$/, "")}/`);
-
-      for (const base of bases) {
-        try {
-          const url = new URL(path, base);
-          url.searchParams.set("_", String(Date.now()));
-          const res = await fetch(url, { cache: "no-store" });
-          if (res.ok) return await res.text();
-        } catch (_) {}
-      }
-
-      if (VIEWER_DEPLOY_FALLBACKS[path]) return VIEWER_DEPLOY_FALLBACKS[path];
-      throw new Error(
-        `${path} \u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u7ba1\u7406\u753b\u9762\uff08${EDITOR_SITE_ORIGIN}\uff09\u304b\u3089\u5b9f\u884c\u3057\u3066\u304f\u3060\u3055\u3044\u3002`
-      );
-    }
-
-    async function buildViewerDeployZip(jsonText, publishedPath) {
-      const indexHtml = await buildViewerDeployIndexHtml();
-      const [viewHtml, netlifyToml] = await Promise.all([
-        fetchViewerDeployText("view.html"),
-        fetchViewerDeployText("netlify.toml")
-      ]);
-      const publishedEntries = buildPublishedZipEntries(jsonText, publishedPath);
-      return {
-        blob: createZipBlob([
-          { name: "index.html", data: new TextEncoder().encode(indexHtml) },
-          { name: "view.html", data: new TextEncoder().encode(viewHtml) },
-          { name: "netlify.toml", data: new TextEncoder().encode(netlifyToml) },
-          { name: "_redirects", data: new TextEncoder().encode(VIEWER_DEPLOY_REDIRECTS) },
-          ...publishedEntries
-        ]),
-        buildStamp: getViewerBuildStamp(indexHtml)
-      };
-    }
-
-    function downloadViewerDeployZip(blob, fileName) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = sanitizeViewerZipFileName(fileName) || VIEWER_DEPLOY_ZIP_DEFAULT;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function showPublishModal({ publishedPath, zipFileName, buildStamp, eventSlug }) {
-      const modal = $("publishModal");
-      const resultWrap = $("publishResultUrlWrap");
-      if (resultWrap) resultWrap.hidden = true;
-      const deployBlock = $("publishDeployBlock");
-      const updateBlock = $("publishUpdateBlock");
-      if (deployBlock) deployBlock.hidden = false;
-      if (updateBlock) updateBlock.hidden = false;
-      const eventLine = eventSlug
-        ? `<br>\u30fb\u95b2\u89a7URL: <code>?event=${escapeHtml(eventSlug)}</code>`
-        : "";
-      $("publishWorkflowSteps").innerHTML = `
-        <li><strong>\u7ba1\u7406\u753b\u9762</strong>\uff08<a href="${escapeHtml(EDITOR_SITE_ORIGIN)}" target="_blank" rel="noopener noreferrer">Surge</a>\uff09<br>\u5927\u4f1a\u3092\u9078\u3073\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f</li>
-        <li>\u300c\u751f\u6210\u300d\u3092\u30af\u30ea\u30c3\u30af<br>\u95b2\u89a7\u7528\u5c02\u7528\u306e Zip \u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9<br><span class="publish-steps-note">\u203b \u7ba1\u7406\u753b\u9762\u306f\u542b\u307e\u308c\u307e\u305b\u3093</span></li>
-        <li>Zip \u3092 <a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a> \u306b\u30c7\u30d7\u30ed\u30a4</li>
-        <li>\u95b2\u89a7\u8005\u304c <code>?event=</code> \u3067\u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\u3092\u898b\u308b</li>
-      `;
-      $("publishSteps").innerHTML = `
-        <li>Zip \u306f<strong>\u95b2\u89a7\u7528\u306e\u307f</strong>\uff08\u7ba1\u7406\u753b\u9762\u306f\u542b\u307f\u307e\u305b\u3093\uff09<br>
-        <code>${escapeHtml(zipFileName)}</code><br>
-        \u30fb\u6700\u65b0\u306e\u95b2\u89a7\u7528\u30a2\u30d7\u30ea<br>
-        \u30fb<code>${escapeHtml(publishedPath || "")}</code>
-        \u30fb<code>events.json</code>${eventLine}</li>
-        <li><a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a> \u306e Deploy manually \u306b<br>Zip \u3092\u30c9\u30e9\u30c3\u30b0\uff06\u30c9\u30ed\u30c3\u30d7<br><span class="publish-steps-note">\u203b Zip \u306f\u81ea\u52d5\u3067\u5c55\u958b\u3055\u308c\u307e\u3059</span></li>
-        <li>\u30c7\u30d7\u30ed\u30a4\u5b8c\u4e86\u5f8c\u3001\u95b2\u89a7\u7528\u30b5\u30a4\u30c8\u3067\u516c\u958b\u3055\u308c\u307e\u3059</li>
-      `;
-      $("publishUpdateSteps").innerHTML = `
-        <li><strong>\u30c7\u30fc\u30bf\u66f4\u65b0</strong>\uff08\u30b7\u30fc\u30c8\u5909\u66f4\uff09<br>
-        \u7ba1\u7406\u753b\u9762\u3067\u518d\u8aad\u307f\u8fbc\u307f<br>
-        \u2193<br>
-        \u300c\u751f\u6210\u300d<br>
-        \u2193<br>
-        Netlify \u306b\u518d\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9</li>
-        <li><strong>\u8868\u793a\u4fee\u6b63</strong>\uff08\u30d7\u30ed\u30b0\u30e9\u30e0\u5909\u66f4\uff09<br>
-        <code>./deploy-surge.sh</code><br>
-        \u2193<br>
-        \u7ba1\u7406\u753b\u9762\u3092\u518d\u8aad\u307f\u8fbc\u307f<br>
-        \u2193<br>
-        \u300c\u751f\u6210\u300d<br>
-        \u2193<br>
-        Netlify \u306b\u518d\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9</li>
-        <li>\u518d\u300c\u751f\u6210\u300d\u306e\u305f\u3073\u306b\u6700\u65b0\u306e\u95b2\u89a7\u7528\u30a2\u30d7\u30ea\u3068\u30c7\u30fc\u30bf\u304c Zip \u306b\u5165\u308a\u307e\u3059\u3002</li>
-        <li><strong>\u7ba1\u7406\u753b\u9762\u306f Surge \u306e\u307f</strong><br>
-        Netlify \u306b\u306f\u4e0a\u3052\u307e\u305b\u3093\u3002</li>
-      `;
-      $("publishModalTitle").textContent = "\u95b2\u89a7\u7528 Zip \u3092\u751f\u6210\u3057\u307e\u3057\u305f";
-      const buildLine = buildStamp
-        ? `<br><span class="publish-steps-note">build ${escapeHtml(buildStamp)}</span>`
-        : "";
-      $("publishModalDesc").innerHTML =
-        `\u95b2\u89a7\u7528\u306b\u52a0\u5de5\u6e08\u307f\u306e Zip \u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u307e\u3057\u305f\u3002${buildLine}<br>Netlify \u306e Deploy manually \u306b\u3053\u306e Zip \u3092\u30c9\u30e9\u30c3\u30b0\uff06\u30c9\u30ed\u30c3\u30d7\u3057\u3066\u304f\u3060\u3055\u3044\u3002<br><span class="publish-steps-note">\u203b index.html \u5358\u4f53\u3084\u30d5\u30a9\u30eb\u30c0\u3054\u3068\u306e Zip \u306f\u4f7f\u308f\u306a\u3044\u3067\u304f\u3060\u3055\u3044\u3002\u5fc5\u305a\u3053\u306e <code>${escapeHtml(zipFileName)}</code> \u3092\u4f7f\u3063\u3066\u304f\u3060\u3055\u3044\u3002</span>`;
-      modal.classList.add("visible");
-      modal.setAttribute("aria-hidden", "false");
-    }
-
     function closePublishModal() {
       const modal = $("publishModal");
       modal.classList.remove("visible");
@@ -4304,24 +3927,28 @@
         let lastError = null;
         for (const path of [...new Set(candidates)]) {
           try {
-            const res = await fetch(`${path}?_=${Date.now()}`, { cache: "no-store" });
-            if (!res.ok) {
+            const raw = await fetchSharedJson(path);
+            if (!raw) {
               lastError = new Error(
-                `公開データがありません（${path}）。管理画面で「保存」してから再度開いてください。`
+                `公開データがありません（${path}）。管理画面で「公開」してから再度開いてください。`
               );
               continue;
             }
-            const raw = await res.json();
-            const decoded =
-              raw && (raw.v === 4 || raw.v === 5) ? expandPublishPayload(raw) : raw;
+            const decoded = decodePublishedJson(raw);
             if (slug) {
               const payloadSlug = normalizeEventSlug(decoded?.eventId || decoded?.eventSlug || "");
               if (payloadSlug && payloadSlug !== slug) {
                 lastError = new Error(
-                  `公開データが大会「${slug}」と一致しません。管理画面で「保存」し直してください。`
+                  `公開データが大会「${slug}」と一致しません。管理画面で「公開」し直してください。`
                 );
                 continue;
               }
+            }
+            if (!hasPublishSnapshot(decoded) && !hasPublishSheetConfig(decoded)) {
+              lastError = new Error(
+                `公開データが空です（${path}）。管理画面で「公開」してから再度開いてください。`
+              );
+              continue;
             }
             return { decoded, error: null };
           } catch (err) {
@@ -4347,76 +3974,41 @@
         lastError ||
         new Error(
           slug
-            ? `大会「${slug}」の閲覧データがありません。管理画面で「保存」してから開いてください。`
+            ? `大会「${slug}」の閲覧データがありません。管理画面で「公開」してから開いてください。`
             : "公開データを読み込めませんでした。"
         )
       );
     }
 
-    async function generateViewerUrl() {
-      if (exportInProgress) return;
-      if (loadInProgress) {
-        setStatus("\u8aad\u307f\u8fbc\u307f\u4e2d\u3067\u3059\u3002\u5b8c\u4e86\u3057\u3066\u304b\u3089\u300c\u751f\u6210\u300d\u3057\u3066\u304f\u3060\u3055\u3044", true);
-        return;
-      }
+    function findEventBySlug(slug, registry = eventRegistry) {
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized) return null;
+      return (registry?.events || []).find(
+        (event) =>
+          normalizeEventSlug(event.slug) === normalized ||
+          normalizeEventSlug(event.name) === normalized
+      ) || null;
+    }
 
-      if (!Object.keys(tournamentsByDay).length) {
-        setStatus("\u516c\u958b\u3059\u308b\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093", true);
-        return;
-      }
+    function eventToViewerSheetConfig(event) {
+      if (!event?.sheetUrl) return null;
+      return {
+        version: 5,
+        mode: "sheet-live",
+        eventId: event.slug || "",
+        eventName: event.name || "",
+        sheetUrl: event.sheetUrl,
+        sheetStart: event.sheetStart || "",
+        sheetEnd: event.sheetEnd || "",
+        hourHeight: 60,
+        tournamentsByDay: {}
+      };
+    }
 
-      const missingSheets = getMissingScheduledSheetNames();
-      if (missingSheets.length) {
-        const preview = missingSheets.slice(0, 3).join("\u3001");
-        const suffix = missingSheets.length > 3 ? "\u2026" : "";
-        setStatus(
-          `\u672a\u8aad\u307f\u8fbc\u307f\u306e\u30b7\u30fc\u30c8\u304c ${missingSheets.length} \u4ef6\u3042\u308a\u307e\u3059\uff08${preview}${suffix}\uff09\u3002\u300c\u66f4\u65b0\u300d\u3092\u3082\u3046\u4e00\u5ea6\u6267\u884c\u3057\u3066\u304f\u3060\u3055\u3044`,
-          true
-        );
-        return;
-      }
-
-      const sheetUrl = $("sheetUrl").value.trim();
-      if (!sheetUrl) {
-        setStatus("\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8URL\u304c\u5fc5\u8981\u3067\u3059", true);
-        $("sheetUrl")?.focus();
-        return;
-      }
-
-      const event = saveCurrentEventFromForm({ announce: false });
-      if (!event?.slug) {
-        setStatus("大会名を入力して保存してください", true);
-        $("eventName")?.focus();
-        return;
-      }
-
-      const zipNameEl = $("viewerZipName");
-      const rawZipName = getViewerZipNameInput() || `${event.slug}.zip`;
-      const zipFileName = sanitizeViewerZipFileName(rawZipName);
-      if (!zipFileName) {
-        setStatus("Zip \u30d5\u30a1\u30a4\u30eb\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", true);
-        zipNameEl?.focus();
-        return;
-      }
-
-      setExportBusy(true);
-      try {
-        const config = buildPublishConfig();
-        const jsonText = buildPublishedJsonText(config);
-        const publishedPath = getPublishedPathForEvent(event);
-        const { blob: zipBlob, buildStamp } = await buildViewerDeployZip(jsonText, publishedPath);
-        if (zipNameEl) zipNameEl.value = zipFileName;
-        downloadViewerDeployZip(zipBlob, zipFileName);
-
-        showPublishModal({ publishedPath, zipFileName, buildStamp, eventSlug: event.slug });
-        setStatus(
-          `${zipFileName} をダウンロードしました（${publishedPath} / ?event=${event.slug}）。Netlify にデプロイしてください`
-        );
-      } catch (e) {
-        setStatus(`\u95b2\u89a7\u7528 Zip \u306e\u751f\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f: ${e.message || e}`, true);
-      } finally {
-        setExportBusy(false);
-      }
+    async function loadViewerConfigFromEventsJson(slug) {
+      const registry = await fetchEventsJson();
+      const event = findEventBySlug(slug, registry);
+      return eventToViewerSheetConfig(event);
     }
 
     function hideViewerEventPicker() {
@@ -4441,7 +4033,7 @@
       }
       if (!list.children.length) {
         const empty = document.createElement("p");
-        empty.textContent = "公開済みの大会がありません。管理画面で生成してください。";
+        empty.textContent = "公開済みの大会がありません。管理画面で「公開」してください。";
         list.appendChild(empty);
       }
       picker.hidden = false;
@@ -4477,7 +4069,12 @@
           decoded = await loadPublishedJsonPayload("");
         } else {
           setStatus("読み込み中...");
-          decoded = await loadPublishedJsonPayload(pValue || "");
+          try {
+            decoded = await loadPublishedJsonPayload(pValue || "");
+          } catch (err) {
+            decoded = await loadViewerConfigFromEventsJson(pValue || "");
+            if (!decoded) throw err;
+          }
         }
 
         hideViewerEventPicker();
@@ -4485,7 +4082,7 @@
         if (boardWrap) boardWrap.style.display = "";
 
         if (!hasPublishSnapshot(decoded) && !hasPublishSheetConfig(decoded)) {
-          throw new Error("閲覧用URLの設定が不正です。編集画面から再生成してください。");
+          throw new Error("閲覧用URLの設定が不正です。管理画面で「公開」し直してください。");
         }
 
         viewerPublishConfig = decoded;
@@ -4569,15 +4166,15 @@
 
     function setupPublishControls() {
       applyGithubSettingsToForm();
-      $("viewerZipName")?.addEventListener("blur", () => {
-        const el = $("viewerZipName");
-        if (!el || !el.value.trim()) return;
-        el.value = sanitizeViewerZipFileName(el.value);
-      });
-      $("saveSharedBtn")?.addEventListener("click", publishEventToGithub);
-      $("githubSettingsSaveBtn")?.addEventListener("click", () => {
+      $("githubSettingsSaveBtn")?.addEventListener("click", async () => {
         const settings = saveGithubSettingsFromForm({ announce: true });
         applyGithubSettingsToForm(settings);
+        if (!settings.token || !Object.keys(tournamentsByDay).length) return;
+        try {
+          await maybeSaveSharedDataAfterLoad({ announceSuccess: true });
+        } catch (err) {
+          setStatus(`自動保存に失敗しました: ${err.message || err}`, true);
+        }
       });
       $("openEventViewBtn")?.addEventListener("click", openSelectedEventView);
       $("publishCopyViewUrlBtn")?.addEventListener("click", async () => {
@@ -4593,7 +4190,6 @@
           setStatus(`コピーに失敗しました: ${err.message || err}`, true);
         }
       });
-      $("publishUrlBtn")?.addEventListener("click", generateViewerUrl);
       $("closePublishModalBtn").addEventListener("click", closePublishModal);
       $("publishModal").addEventListener("click", (event) => {
         if (event.target === $("publishModal")) closePublishModal();
@@ -8629,7 +8225,6 @@
     function setPublishButtonState() {
       const fullLoadBtn = $("fullLoadBtn");
       const refreshBtn = $("refreshBtn");
-      const zipBtn = $("publishUrlBtn");
       const openViewBtn = $("openEventViewBtn");
       const blocked = loadInProgress || exportInProgress;
       const showUpdate = shouldShowUpdateButton();
@@ -8653,22 +8248,8 @@
       const hint = $("eventLoadHint");
       if (hint) {
         hint.textContent = showUpdate
-          ? "更新: 変更分のみ読み込み / 保存: 他の端末でも見られる"
-          : "公開: シートから新規読み込み / 保存: 他の端末でも見られる";
-      }
-      if (zipBtn) {
-        zipBtn.disabled = blocked;
-        zipBtn.classList.toggle("is-busy", exportInProgress);
-        zipBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
-        zipBtn.textContent = exportInProgress ? PUBLISH_BTN_BUSY_LABEL : PUBLISH_BTN_LABEL;
-      }
-      const saveBtn = $("saveSharedBtn");
-      if (saveBtn) {
-        const canSave = Object.keys(tournamentsByDay).length > 0;
-        saveBtn.disabled = blocked || !canSave;
-        saveBtn.classList.toggle("is-busy", exportInProgress);
-        saveBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
-        saveBtn.textContent = exportInProgress ? SAVE_SHARED_BTN_BUSY_LABEL : SAVE_SHARED_BTN_LABEL;
+          ? "更新: 変更分のみ読み込み。他の端末で見るなら Token を設定"
+          : "公開: シートから新規読み込み。他の端末で見るなら Token を設定";
       }
     }
 
@@ -8680,9 +8261,6 @@
     function setExportBusy(busy) {
       exportInProgress = busy;
       setPublishButtonState();
-      if (busy) {
-        setStatus(PUBLISH_BTN_BUSY_LABEL);
-      }
     }
 
     async function loadSingleFromUrl(options = {}) {

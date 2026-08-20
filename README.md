@@ -7,17 +7,16 @@ Google スプレッドシートからトーナメントのブレイク時間を�
 | **管理画面** | `https://tournament-timetable.surge.sh/` |
 | **閲覧** | `https://tournament-timetable.surge.sh/?mode=view&event=大会名` |
 
-管理も閲覧も同じ Surge サイトです。大会データを「保存」すると GitHub に書き出され、他の端末でも同じ閲覧 URL で開けます。
+管理も閲覧も同じ Surge サイトです。この端末だけで見るなら Token は不要です。他の端末の閲覧 URL や管理画面で同じ大会を開くには、GitHub Token を入れてから「公開」してください。`events.json` と `published/{大会名}.json` がリポジトリに書き込まれ、まもなく他の端末でも見られます。
 
 ## 使い方（大会ごと）
 
 1. 管理画面で **大会を追加**（大会名・シートURL・タブ範囲）
 2. 「公開」でシートを読み込む。以降の変更は「更新」（差分）
-3. 初回だけ「保存先の設定」に GitHub Token（`repo` 権限）を入れる
-4. 「保存」を押す。`events.json` と `published/{大会名}.json` がリポジトリに書き込まれ、まもなく他の端末でも同じ閲覧 URL で見られます
-5. 閲覧は `?mode=view&event=大会名`（例: 大会名が `JOPT 2025` なら `/?mode=view&event=jopt-2025`）
+3. 他の端末でも見る場合だけ、「保存先の設定」に GitHub Token（`repo` 権限）を入れる。読み込み完了後、閲覧用データは自動保存されます
+4. 閲覧は `?mode=view&event=大会名`（例: 大会名が `JOPT 2025` なら `/?mode=view&event=jopt-2025`）
 
-Token はブラウザの localStorage にだけ保存されます。Token を設定済みなら、「公開」「更新」のあとにも自動でサーバーへ保存します。GitHub への書き込み後、Actions が Surge を更新するまで 1 分ほどかかることがあります。
+Token はブラウザの localStorage にだけ保存されます。GitHub への書き込み後、Actions が Surge を更新するまで 1 分ほどかかることがあります。
 
 ## スプレッドシートの形式
 
@@ -60,27 +59,11 @@ cd ~/Projects/tournament-timetable
 
 ### 閲覧用 → Netlify
 
-1. 公開用 JSON を `published/` に置く（または管理画面で「生成」）
-2. `events.json` に大会一覧を置く
-3. 初回:
+公開用 JSON は管理画面の自動保存で `published/` と `events.json` に入ります。初回:
 
 ```bash
 ./setup-and-deploy-viewer.sh
 ```
-
-再デプロイ:
-
-```bash
-./deploy-viewer.sh
-```
-
-ローカルで Zip を作る場合:
-
-```bash
-./build-viewer-zip.sh published/timetable.json my-tournament.zip
-```
-
-Netlify の Deploy manually にこの Zip をドラッグ＆ドロップしてください。`index.html` 単体やフォルダごと Zip は使わないでください。
 
 ### GitHub Actions（自動デプロイ）
 
@@ -89,4 +72,4 @@ Netlify の Deploy manually にこの Zip をドラッグ＆ドロップして�
 - **Surge（管理画面）**: `SURGE_LOGIN` / `SURGE_TOKEN`（`./get-surge-token.sh` 参照）
 - **Netlify（閲覧用）**: `NETLIFY_AUTH_TOKEN` / `NETLIFY_SITE_ID`（`./get-netlify-token.sh` 参照）
 
-`main` へ push すると Surge へ自動デプロイされます。管理画面の「保存」も GitHub の `main` に JSON を書き込むため、同じ Actions が走ります。
+`main` へ push すると Surge へ自動デプロイされます。管理画面の「公開」「更新」も GitHub の `main` に JSON を書き込むため、同じ Actions が走ります。
