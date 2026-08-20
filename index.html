@@ -1985,14 +1985,15 @@
     let overlapHighlight = { mode: "none", bandId: null };
     let sheetSnapshotCache = {};
     let lastLoadContext = null;
-    const SHEET_LOAD_CONCURRENCY = 6;
-    const SHEET_INCREMENTAL_CONCURRENCY = 3;
-    const RENDER_EVERY_N_SHEETS = 24;
-    const TAB_REFRESH_EVERY_N_SHEETS = 12;
+    const SHEET_LOAD_CONCURRENCY = 10;
+    const SHEET_INCREMENTAL_CONCURRENCY = 8;
+    const RENDER_EVERY_N_SHEETS = 4;
+    const TAB_REFRESH_EVERY_N_SHEETS = 4;
     const GVIZ_DATA_RANGE = "A1:L200";
     const FESTIVAL_META_RANGE = "A1:L8";
     const FETCH_RETRY_STATUSES = [429, 503];
-    const FETCH_MAX_RETRIES = 5;
+    const FETCH_MAX_RETRIES = 2;
+    const REVISION_MAP_TIMEOUT_MS = 2500;
 
     const $ = (id) => document.getElementById(id);
 
@@ -2132,8 +2133,19 @@
       const name = event?.name || $("eventName")?.value || "";
       if (!String(name).trim()) return "";
       const slug = uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
-      const base = getViewerSiteOrigin();
-      return `${base}/?mode=view&event=${encodeURIComponent(slug)}`;
+      const sheetUrl = String(event?.sheetUrl || $("sheetUrl")?.value || "").trim();
+      const sheetStart = String(event?.sheetStart || $("sheetStart")?.value || "").trim();
+      const sheetEnd = String(event?.sheetEnd || $("sheetEnd")?.value || "").trim();
+      const params = new URLSearchParams();
+      params.set("mode", "view");
+      params.set("event", slug);
+      if (name) params.set("n", name);
+      const sheetId = extractSpreadsheetId(sheetUrl);
+      if (sheetId) params.set("i", sheetId);
+      else if (sheetUrl) params.set("u", sheetUrl);
+      if (sheetStart) params.set("a", sheetStart);
+      if (sheetEnd) params.set("z", sheetEnd);
+      return `${getViewerSiteOrigin()}/?${params.toString()}`;
     }
 
     function updateEventViewUrlHint(event) {
@@ -2524,23 +2536,49 @@
       return res.json();
     }
 
-    async function fetchSharedJson(filePath) {
-      let local = null;
-      try {
-        local = await fetchJsonFromUrl(filePath);
-      } catch (_) {}
-      if (sharedJsonLooksPopulated(filePath, local)) return local;
+    async function firstMatchingJson(urls, isMatch) {
+      if (!urls.length) return null;
+      return new Promise((resolve) => {
+        let pending = urls.length;
+        let settled = false;
+        const finishEmpty = () => {
+          if (!settled && pending <= 0) {
+            settled = true;
+            resolve(null);
+          }
+        };
+        for (const url of urls) {
+          Promise.resolve()
+            .then(() => fetchJsonFromUrl(url))
+            .then((data) => {
+              if (settled) return;
+              if (isMatch(data)) {
+                settled = true;
+                resolve(data);
+                return;
+              }
+              pending -= 1;
+              finishEmpty();
+            })
+            .catch(() => {
+              if (settled) return;
+              pending -= 1;
+              finishEmpty();
+            });
+        }
+      });
+    }
 
-      for (const url of githubFilePublicUrls(filePath)) {
-        try {
-          const remote = await fetchJsonFromUrl(url);
-          if (sharedJsonLooksPopulated(filePath, remote)) return remote;
-        } catch (_) {}
-      }
+    async function fetchSharedJson(filePath) {
+      const urls = [filePath, ...githubFilePublicUrls(filePath)];
+      const populated = await firstMatchingJson(urls, (data) =>
+        sharedJsonLooksPopulated(filePath, data)
+      );
+      if (populated) return populated;
 
       const apiRemote = await fetchGithubContentsJson(filePath);
       if (sharedJsonLooksPopulated(filePath, apiRemote)) return apiRemote;
-      return apiRemote || local;
+      return apiRemote || null;
     }
 
     function sharedJsonLooksPopulated(filePath, data) {
@@ -2555,19 +2593,26 @@
       return true;
     }
 
-    function showAppPublishModal({ event, viewUrl, commitUrl }) {
+    function showAppPublishModal({ event, viewUrl, commitUrl, savedToServer = true }) {
       const modal = $("publishModal");
-      $("publishModalTitle").textContent = "保存しました";
-      $("publishModalDesc").innerHTML =
-        `大会「${escapeHtml(event.name || event.slug)}」をサーバーに保存しました。<br>` +
-        `まもなく同じ閲覧URLで、他の端末からも見られます。` +
-        (commitUrl
-          ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">保存内容を確認</a></span>`
-          : "");
-      $("publishWorkflowSteps").innerHTML = `
+      const name = escapeHtml(event?.name || event?.slug || "");
+      $("publishModalTitle").textContent = savedToServer ? "他の端末向けに保存しました" : "閲覧URLの準備ができました";
+      $("publishModalDesc").innerHTML = savedToServer
+        ? `大会「${name}」をサーバーに保存しました。<br>この閲覧URLを他の端末で開くと、同じタイムテーブルが表示されます。` +
+          (commitUrl
+            ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">保存内容を確認</a></span>`
+            : "")
+        : `大会「${name}」の閲覧URLです。<br>シート情報が含まれているので、他の端末でもこのURLから開けます。`;
+      $("publishWorkflowSteps").innerHTML = savedToServer
+        ? `
         <li>管理画面で大会を「公開」する</li>
-        <li>Token 設定済みならサーバーへ自動保存される</li>
+        <li>サーバーへ自動保存される</li>
         <li>同じ閲覧URLを他の端末で開く</li>
+      `
+        : `
+        <li>下の閲覧URLをコピーする</li>
+        <li>他の端末でそのURLを開く</li>
+        <li>大会一覧にも出す場合は Token を設定してから再公開</li>
       `;
       const wrap = $("publishResultUrlWrap");
       const code = $("publishResultUrl");
@@ -2613,7 +2658,7 @@
         const viewUrl = buildEventViewUrl(event);
         if (announce) {
           const commitUrl = `https://github.com/${settings.owner}/${settings.repo}/commits/${encodeURIComponent(settings.branch)}`;
-          showAppPublishModal({ event, viewUrl, commitUrl });
+          showAppPublishModal({ event, viewUrl, commitUrl, savedToServer: true });
           setStatus(
             `保存しました。まもなく他の端末でも ${viewUrl} で閲覧できます`
           );
@@ -2624,25 +2669,30 @@
       }
     }
 
-    async function maybeSaveSharedDataAfterLoad({ announceSuccess = false } = {}) {
+    async function maybeSaveSharedDataAfterLoad({ announceSuccess = false, showShareModal } = {}) {
       if (exportInProgress) return;
       const missingSheets = getMissingScheduledSheetNames();
       if (missingSheets.length) return;
       if (!Object.keys(tournamentsByDay).length) return;
 
+      const shouldShowModal = showShareModal ?? !announceSuccess;
+      const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
+      const viewUrl = buildEventViewUrl(event);
       const settings = loadGithubSettings();
       const previous = String($("status")?.textContent || "").trim();
       if (!settings.token) {
+        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: false });
         setStatus(
           previous
-            ? `${previous} / 他の端末で見るには「保存先の設定」に Token を入れてください`
-            : "他の端末で見るには「保存先の設定」に Token を入れてください"
+            ? `${previous} / 他の端末では表示された閲覧URLを開いてください`
+            : "他の端末では表示された閲覧URLを開いてください"
         );
         return;
       }
       try {
         await saveSharedDataToGithub({ announce: announceSuccess, skipBusy: !announceSuccess });
         if (!announceSuccess) {
+          if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: true });
           setStatus(
             previous
               ? `${previous} / 他の端末向けに自動保存しました`
@@ -2651,6 +2701,7 @@
         }
       } catch (err) {
         console.warn("shared save after load failed", err);
+        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: false });
         setStatus(
           previous
             ? `${previous} / 自動保存に失敗しました: ${err.message || err}`
@@ -2843,6 +2894,49 @@
       }
     }
 
+    async function persistViewerSnapshot(decoded) {
+      if (!IS_VIEWER_MODE) return false;
+      const slug = normalizeEventSlug(
+        decoded?.eventId || decoded?.eventSlug || getViewerEventSlug()
+      );
+      const slugKey = timetableCacheSlugKey(slug);
+      if (!slugKey || !Object.keys(tournamentsByDay || {}).length) return false;
+      const payload = {
+        version: TIMETABLE_CACHE_VERSION,
+        eventId: slug,
+        slug,
+        eventName: decoded?.eventName || "",
+        savedAt: decoded?.publishedAt || new Date().toISOString(),
+        sheetKey: getTimetableCacheSheetKey({
+          sheetUrl: decoded?.sheetUrl || "",
+          sheetStart: decoded?.sheetStart || "",
+          sheetEnd: decoded?.sheetEnd || ""
+        }),
+        sheetUrl: decoded?.sheetUrl || "",
+        sheetStart: decoded?.sheetStart || "",
+        sheetEnd: decoded?.sheetEnd || "",
+        hourHeight: Number(decoded?.hourHeight) || Number($("hourHeight")?.value) || 60,
+        selectedDay,
+        dayTabItems: Array.isArray(dayTabItems) ? dayTabItems : [],
+        tournamentsByDay,
+        sheetSchedule: Array.isArray(sheetSchedule) ? sheetSchedule : [],
+        sheetSnapshotCache: sheetSnapshotCache || {},
+        lastLoadContext: lastLoadContext || "",
+        overlapHighlight: overlapHighlight || { mode: "none", bandId: null },
+        loadedFromSheet: true
+      };
+      try {
+        await idbTimetableCacheRequest("readwrite", (store) => {
+          store.put(payload, slugKey);
+          return store.get(slugKey);
+        });
+        return true;
+      } catch (err) {
+        console.warn("viewer cache save failed", err);
+        return false;
+      }
+    }
+
     async function loadTimetableCache(eventId) {
       if (!eventId) return null;
       try {
@@ -3025,8 +3119,31 @@
 
     function mergeEventRegistries(base, overlay) {
       const byId = new Map();
-      for (const event of base?.events || []) byId.set(event.id, createEmptyEvent(event));
-      for (const event of overlay?.events || []) byId.set(event.id, createEmptyEvent(event));
+      const bySlug = new Map();
+      const add = (raw) => {
+        const event = createEmptyEvent(raw);
+        const slug = normalizeEventSlug(event.slug || event.name);
+        if (slug && bySlug.has(slug)) {
+          const existing = bySlug.get(slug);
+          const merged = createEmptyEvent({
+            ...existing,
+            ...event,
+            id: existing.id,
+            slug,
+            sheetUrl: event.sheetUrl || existing.sheetUrl,
+            sheetStart: event.sheetStart || existing.sheetStart,
+            sheetEnd: event.sheetEnd || existing.sheetEnd,
+            name: event.name || existing.name
+          });
+          byId.set(existing.id, merged);
+          bySlug.set(slug, merged);
+          return;
+        }
+        byId.set(event.id, event);
+        if (slug) bySlug.set(slug, event);
+      };
+      for (const event of base?.events || []) add(event);
+      for (const event of overlay?.events || []) add(event);
       const events = [...byId.values()];
       const selectedId =
         (overlay?.selectedId && byId.has(overlay.selectedId) && overlay.selectedId) ||
@@ -3858,14 +3975,73 @@
       setInterval(checkLatest, 2500);
     }
 
+    async function tryPaintViewerFromCache(slug) {
+      const cache = await loadTimetableCacheForViewerSlug(normalizeEventSlug(slug));
+      const decoded = timetableCacheToViewerPayload(cache);
+      if (!hasPublishSnapshot(decoded)) return false;
+      hideViewerEventPicker();
+      const boardWrap = document.querySelector(".board-wrap");
+      if (boardWrap) boardWrap.style.display = "";
+      viewerPublishConfig = decoded;
+      viewerAppliedSavedAt = decoded.publishedAt || cache.savedAt || "";
+      applyPublishPayload(decoded);
+      if (!dayTabItems.length) return false;
+      renderViewerFromDecoded(decoded);
+      updateViewerBanner(decoded, true);
+      setStatus("");
+      return true;
+    }
+
+    async function applyViewerPublishedPayload(decoded, { announce = "" } = {}) {
+      hideViewerEventPicker();
+      const boardWrap = document.querySelector(".board-wrap");
+      if (boardWrap) boardWrap.style.display = "";
+      viewerPublishConfig = decoded;
+      const sameSnapshot =
+        decoded?.publishedAt && decoded.publishedAt === viewerAppliedSavedAt && dayTabItems.length;
+      if (!sameSnapshot) {
+        applyPublishPayload(decoded);
+        if (!dayTabItems.length) {
+          throw new Error("公開データが空です。");
+        }
+        viewerAppliedSavedAt = decoded.publishedAt || "";
+        renderViewerFromDecoded(decoded);
+        updateViewerBanner(decoded, true);
+      }
+      await persistViewerSnapshot(decoded);
+      setStatus(announce || "");
+    }
+
     async function refreshViewerFromSheet() {
       const fromAdmin = await reloadViewerFromAdminCache({ announce: true });
       if (fromAdmin) return;
-      if (!viewerPublishConfig?.sheetUrl) return;
-      setStatus("\u66f4\u65b0\u4e2d...");
-      await loadViewerFromLiveConfig(viewerPublishConfig);
-      renderViewerFromDecoded(viewerPublishConfig);
-      setStatus("\u30b7\u30fc\u30c8\u306e\u6700\u65b0\u30c7\u30fc\u30bf\u306b\u66f4\u65b0\u3057\u307e\u3057\u305f");
+      setStatus("更新中...");
+      const slug = getViewerEventSlug();
+      try {
+        const decoded = await loadPublishedJsonPayload(slug || "", { bypassCache: true });
+        if (hasPublishSnapshot(decoded)) {
+          await applyViewerPublishedPayload(decoded, {
+            announce: "最新の公開データに更新しました"
+          });
+          return;
+        }
+        const liveConfig = hasPublishSheetConfig(decoded) ? decoded : viewerPublishConfig;
+        if (!liveConfig?.sheetUrl) {
+          setStatus("更新できる公開データがありません", true);
+          return;
+        }
+        await loadViewerFromLiveConfig(liveConfig);
+        renderViewerFromDecoded(liveConfig);
+        setStatus("シートの最新データに更新しました");
+      } catch (err) {
+        if (viewerPublishConfig?.sheetUrl) {
+          await loadViewerFromLiveConfig(viewerPublishConfig);
+          renderViewerFromDecoded(viewerPublishConfig);
+          setStatus("シートの最新データに更新しました");
+          return;
+        }
+        throw err;
+      }
     }
 
     function resolveSheetConfig(override) {
@@ -3937,11 +4113,12 @@
       modal.setAttribute("aria-hidden", "true");
     }
 
-    async function loadPublishedJsonPayload(legacySlug) {
+    async function loadPublishedJsonPayload(legacySlug, options = {}) {
       const slug = normalizeEventSlug(legacySlug);
+      const bypassCache = !!options.bypassCache;
       const isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
       const tryCache = async () => {
-        if (!slug) return null;
+        if (bypassCache || !slug) return null;
         const cached = await loadTimetableCacheForViewerSlug(slug);
         return timetableCacheToViewerPayload(cached);
       };
@@ -4031,6 +4208,48 @@
       };
     }
 
+    function viewerConfigFromSearchParams(params) {
+      const slug = normalizeEventSlug(params.get("event") || params.get("e") || params.get("p") || "");
+      const eventName = String(params.get("n") || params.get("name") || "").trim();
+      const sheetUrlParam = String(params.get("u") || params.get("sheet") || "").trim();
+      const sheetId = String(params.get("i") || params.get("sid") || "").trim();
+      const sheetStart = String(params.get("a") || params.get("start") || "").trim();
+      const sheetEnd = String(params.get("z") || params.get("end") || "").trim();
+      const sheetUrl =
+        sheetUrlParam ||
+        (sheetId ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit` : "");
+      if (!sheetUrl) return null;
+      return eventToViewerSheetConfig({
+        slug,
+        name: eventName || slug,
+        sheetUrl,
+        sheetStart,
+        sheetEnd
+      });
+    }
+
+    async function resolveViewerConfigForSlug(slug, params) {
+      const fromPublished = await loadPublishedJsonPayload(slug || "", { bypassCache: true }).catch(
+        (err) => err
+      );
+      if (fromPublished && !(fromPublished instanceof Error) && hasPublishSnapshot(fromPublished)) {
+        return fromPublished;
+      }
+      if (
+        fromPublished &&
+        !(fromPublished instanceof Error) &&
+        hasPublishSheetConfig(fromPublished)
+      ) {
+        return fromPublished;
+      }
+      const fromEvents = await loadViewerConfigFromEventsJson(slug || "");
+      if (fromEvents) return fromEvents;
+      const fromQuery = viewerConfigFromSearchParams(params);
+      if (fromQuery) return fromQuery;
+      if (fromPublished instanceof Error) throw fromPublished;
+      return fromPublished || null;
+    }
+
     async function loadViewerConfigFromEventsJson(slug) {
       const registry = await fetchEventsJson();
       const event = findEventBySlug(slug, registry);
@@ -4076,6 +4295,7 @@
 
       try {
         let decoded = null;
+        let paintedFromCache = false;
         if (isEmbeddedPublishPayload(pValue)) {
           decoded = await decodePublishPayload(pValue);
         } else if (cValue) {
@@ -4092,14 +4312,18 @@
             return;
           }
           setStatus("読み込み中...");
-          decoded = await loadPublishedJsonPayload("");
+          decoded = await loadPublishedJsonPayload("", { bypassCache: true });
         } else {
-          setStatus("読み込み中...");
+          paintedFromCache = await tryPaintViewerFromCache(pValue || "");
+          if (!paintedFromCache) setStatus("読み込み中...");
           try {
-            decoded = await loadPublishedJsonPayload(pValue || "");
+            decoded = await resolveViewerConfigForSlug(pValue || "", params);
           } catch (err) {
-            decoded = await loadViewerConfigFromEventsJson(pValue || "");
-            if (!decoded) throw err;
+            if (paintedFromCache) {
+              setStatus("最新データの取得に失敗したため、前回の表示を維持しています", true);
+              return;
+            }
+            throw err;
           }
         }
 
@@ -4108,20 +4332,14 @@
         if (boardWrap) boardWrap.style.display = "";
 
         if (!hasPublishSnapshot(decoded) && !hasPublishSheetConfig(decoded)) {
+          if (paintedFromCache) return;
           throw new Error("閲覧用URLの設定が不正です。管理画面で「公開」し直してください。");
         }
 
         viewerPublishConfig = decoded;
 
         if (hasPublishSnapshot(decoded)) {
-          applyPublishPayload(decoded);
-          if (!dayTabItems.length) {
-            throw new Error("公開データが空です。");
-          }
-          viewerAppliedSavedAt = decoded.publishedAt || "";
-          renderViewerFromDecoded(decoded);
-          updateViewerBanner(decoded, true);
-          setStatus("");
+          await applyViewerPublishedPayload(decoded);
         } else {
           setStatus("読み込み中...");
           await loadViewerFromLiveConfig(decoded);
@@ -4133,10 +4351,15 @@
           setStatus("\u30b7\u30fc\u30c8\u306e\u6700\u65b0\u30c7\u30fc\u30bf\u3092\u8868\u793a\u4e2d");
         }
       } catch (e) {
+        if (dayTabItems.length) {
+          setStatus(formatFetchError(e), true);
+          return;
+        }
         setStatus(formatFetchError(e), true);
         const board = $("board");
         board.className = "empty";
-        board.innerHTML = "\u516c\u958b\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002";
+        board.innerHTML =
+          "公開データを読み込めませんでした。<br>管理画面の「閲覧URL」をコピーして開き直してください。";
         setExportSvgEnabled(false);
       }
     }
@@ -4239,7 +4462,7 @@
         const timeout = setTimeout(() => {
           delete window[cb];
           reject(new Error("timeout"));
-        }, 10000);
+        }, 3000);
 
         window[cb] = (data) => {
           clearTimeout(timeout);
@@ -4575,7 +4798,7 @@
         const timeout = setTimeout(() => {
           delete window[cb];
           resolve(null);
-        }, 10000);
+        }, REVISION_MAP_TIMEOUT_MS);
 
         window[cb] = (data) => {
           clearTimeout(timeout);
@@ -4622,7 +4845,9 @@
     }
 
     async function fetchGvizText(url, sheetName, gid, options = null) {
-      const apiUrl = buildGvizApiUrl(url, sheetName, gid, options || {});
+      const opts = { ...(options || {}) };
+      if (opts.range === undefined) opts.range = GVIZ_DATA_RANGE;
+      const apiUrl = buildGvizApiUrl(url, sheetName, gid, opts);
       let res;
       let text;
       try {
@@ -8372,8 +8597,8 @@
       const hint = $("eventLoadHint");
       if (hint) {
         hint.textContent = showUpdate
-          ? "更新: 変更分のみ読み込み。他の端末で見るなら Token を設定"
-          : "公開: シートから新規読み込み。他の端末で見るなら Token を設定";
+          ? "更新: 変更分のみ読み込み。公開後の閲覧URLを他の端末で開けます"
+          : "公開: シートから新規読み込み。完了後に他端末用の閲覧URLを表示します";
       }
     }
 
@@ -8399,8 +8624,9 @@
       const isIncremental = incremental && shouldUseIncrementalLoad(url, "", "");
       setStatus(isIncremental ? "\u5dee\u5206\u66f4\u65b0\u4e2d..." : "\u8aad\u307f\u8fbc\u307f\u4e2d...");
       loadedFromSheet = true;
+      const contextKey = getLoadContextKey(url, "", "");
 
-      if (!isIncremental) {
+      if (!isIncremental && lastLoadContext !== contextKey) {
         tournamentsByDay = {};
         dayTabItems = [];
         sheetSnapshotCache = {};
@@ -8409,7 +8635,8 @@
       try {
         const spreadsheetId = extractSpreadsheetId(url);
         const item = { sheetName: "gid:" + gid, gid };
-        const revisionMap = spreadsheetId ? await fetchSheetRevisionMap(spreadsheetId) : null;
+        const revisionMap =
+          isIncremental && spreadsheetId ? await fetchSheetRevisionMap(spreadsheetId) : null;
         const result = await loadSheetItem(url, spreadsheetId, item, 0, revisionMap);
 
         if (isIncremental && !result.changed) {
@@ -8444,7 +8671,7 @@
             ? `\u66f4\u65b0\u5b8c\u4e86\uff08${result.changed ? "1\u4ef6\u5909\u66f4" : "\u5909\u66f4\u306a\u3057"}\u3001\u5408\u8a08 ${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
             : `\u8aad\u307f\u8fbc\u307f\u5b8c\u4e86\uff08${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
         );
-        await maybeSaveSharedDataAfterLoad();
+        await maybeSaveSharedDataAfterLoad({ showShareModal: !isIncremental });
         return true;
       } catch (e) {
         setStatus(formatFetchError(e), true);
@@ -8513,9 +8740,10 @@
       gvizText,
       html,
       csvMeta,
-      cached
+      cached,
+      parsedGrid = null
     ) {
-      const grid = parseGvizResponse(gvizText);
+      const grid = parsedGrid || parseGvizResponse(gvizText);
       const htmlMeta = html ? parseHtmlviewMetadata(html) : {};
       const sheetMeta = buildSheetSupplementalMeta(csvMeta, htmlMeta);
       const festivalMeta = await resolveFestivalMeta(
@@ -8543,9 +8771,9 @@
       return count;
     }
 
-    function gvizTextHasFestivalFee(gvizText) {
+    function gridHasFestivalMeta(grid) {
       try {
-        const meta = extractFestivalMetaFromGrid(parseGvizResponse(gvizText));
+        const meta = extractFestivalMetaFromGrid(grid);
         return !!(meta.fee && (meta.lateLevel || meta.lateTime));
       } catch {
         return false;
@@ -8592,11 +8820,11 @@
         return { changed: false, count: 0 };
       }
 
-      const html = gvizTextHasFestivalFee(gvizText)
+      const grid = parseGvizResponse(gvizText);
+      const html = gridHasFestivalMeta(grid)
         ? ""
         : await fetchHtmlviewText(spreadsheetId, item.gid, item.sheetName);
       const markersHash = hashString(html || "");
-      const grid = parseGvizResponse(gvizText);
       const htmlMeta = html ? parseHtmlviewMetadata(html) : {};
       let csvMeta = {};
       if (needsCsvMetadata(grid, htmlMeta)) {
@@ -8625,7 +8853,8 @@
         gvizText,
         html,
         csvMeta,
-        cached
+        cached,
+        grid
       );
       if (count === 0) {
         delete sheetSnapshotCache[cacheKey];
@@ -8720,26 +8949,28 @@
         setStatus("\u8aad\u307f\u8fbc\u307f\u4e2d...");
       }
       loadedFromSheet = true;
+      const contextKey = getLoadContextKey(url, start, end);
 
-      if (!isIncremental) {
+      if (!isIncremental && lastLoadContext !== contextKey) {
         tournamentsByDay = {};
         dayTabItems = [];
         sheetSnapshotCache = {};
+      } else if (Object.keys(tournamentsByDay).length) {
+        renderDayTabs();
+        renderBoard();
       }
 
       try {
         const spreadsheetId = extractSpreadsheetId(url);
-        const contextKey = getLoadContextKey(url, start, end);
-        let revisionMap;
+        let revisionMap = null;
 
         if (isIncremental && sheetSchedule.length && lastLoadContext === contextKey) {
           revisionMap = await fetchSheetRevisionMap(spreadsheetId);
         } else {
-          const [allSheets, fetchedRevisionMap] = await Promise.all([
-            fetchAllSheetNames(spreadsheetId, extractGidFromUrl(url)),
-            fetchSheetRevisionMap(spreadsheetId)
-          ]);
-          revisionMap = fetchedRevisionMap;
+          const allSheets = await fetchAllSheetNames(spreadsheetId, extractGidFromUrl(url));
+          if (isIncremental) {
+            revisionMap = await fetchSheetRevisionMap(spreadsheetId);
+          }
           sheetSchedule = await resolveSheetSchedule(spreadsheetId, url, allSheets);
         }
 
@@ -8851,8 +9082,9 @@
 
         if (failedSheets.length) {
           const retryTargets = sheetsToLoad.filter(({ item }) => failedSheets.includes(item.sheetName));
-          await sleep(isIncremental ? 800 : 1200);
-          for (const { item, sheetIndex } of retryTargets) {
+          await sleep(isIncremental ? 400 : 500);
+          const stillFailed = [];
+          await mapWithConcurrency(retryTargets, sheetConcurrency, async ({ item, sheetIndex }) => {
             if (myGeneration !== loadGeneration) return;
             try {
               const result = await loadSheetItem(
@@ -8863,13 +9095,14 @@
                 revisionMap,
                 loadOptions
               );
-              const failIdx = failedSheets.indexOf(item.sheetName);
-              if (failIdx >= 0) failedSheets.splice(failIdx, 1);
               if (result.changed) changedCount++;
             } catch (err) {
               console.warn("retry", item.sheetName, err);
+              stillFailed.push(item.sheetName);
             }
-          }
+          });
+          failedSheets.length = 0;
+          failedSheets.push(...stillFailed);
         }
 
         pruneTournamentsOutsideSchedule();
@@ -8920,7 +9153,7 @@
           );
         }
         if (!failedSheets.length) {
-          await maybeSaveSharedDataAfterLoad();
+          await maybeSaveSharedDataAfterLoad({ showShareModal: !isIncremental });
         }
       } catch (e) {
         if (myGeneration === loadGeneration) {
