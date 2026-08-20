@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache" />
-  <!-- late-color: v3 2026-08-20 -->
+  <!-- late-color: v4 2026-08-20 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -2058,7 +2058,7 @@
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
     const TIMETABLE_CACHE_VERSION = 2;
-    const LATE_COLOR_LOGIC_VERSION = 3;
+    const LATE_COLOR_LOGIC_VERSION = 4;
     const TIMETABLE_SYNC_CHANNEL = "tournamentTimetableSync";
     const TIMETABLE_SYNC_PING_KEY = "tournamentTimetableSyncPing";
     let viewerAppliedSavedAt = "";
@@ -5520,16 +5520,49 @@
     function lateCutoffLevelFromTime(tournament, lateTime) {
       const lateMin = parseTimeToMinutes(lateTime);
       if (lateMin == null) return null;
+      const levels = (tournament.blocks || []).filter(
+        (block) => block.type === "level" && block.levelNum != null && block.startMin != null
+      );
+      if (!levels.length) return null;
+
+      const wrap = (minutes) => (isEarlyMorning(minutes) ? minutes + 24 * 60 : minutes);
+      const late = wrap(lateMin);
+      const firstStart = wrap(levels[0].startMin);
+      if (late <= firstStart) return null;
+
       let cutoff = null;
-      for (const block of tournament.blocks || []) {
-        if (block.type !== "level" || block.levelNum == null || block.startMin == null) continue;
-        let start = block.startMin;
-        let late = lateMin;
-        if (isEarlyMorning(start)) start += 24 * 60;
-        if (isEarlyMorning(late)) late += 24 * 60;
-        if (start < late) cutoff = block.levelNum;
+      for (const block of levels) {
+        if (wrap(block.startMin) < late) cutoff = block.levelNum;
       }
       return cutoff;
+    }
+
+    function normalizeLateMetaValue(value) {
+      return String(value || "").trim();
+    }
+
+    function isLateClosedSentinel(value) {
+      const s = normalizeLateMetaValue(value).replace(/^#/, "").toLowerCase();
+      return (
+        s === "-" ||
+        s === "–" ||
+        s === "—" ||
+        s === "n/a" ||
+        s === "na" ||
+        s === "none" ||
+        s === "null" ||
+        s === "なし"
+      );
+    }
+
+    function eventHasNoLateRegistration(tournament) {
+      const name = `${tournament?.name || ""} ${tournament?.sheetName || ""}`;
+      return /3on3|3-on-3|3\s*on\s*3/i.test(name);
+    }
+
+    function eventIsDay2Flight(tournament) {
+      const name = `${tournament?.name || ""} ${tournament?.sheetName || ""}`;
+      return /day\s*2\b|day2\b/i.test(name);
     }
 
     function resolveLateYellowLevel(tournament, overlay = {}, markers = {}) {
@@ -5548,16 +5581,45 @@
 
     function applyLateRegistrationStyles(tournament, overlay = {}, markers = {}) {
       if (!tournament) return tournament;
+      const lateLevel = overlay.lateLevel || tournament.lateLevel || "";
+      const lateTime = overlay.lateTime || tournament.lateTime || "";
+
+      if (eventHasNoLateRegistration(tournament)) {
+        tournament.lateLevel = parseLateLevelNumber(lateLevel) != null ? lateLevel : "";
+        tournament.lateTime = lateCutoffLevelFromTime(tournament, lateTime) != null ? lateTime : "";
+        const cutoff =
+          parseLateLevelNumber(tournament.lateLevel) ??
+          lateCutoffLevelFromTime(tournament, tournament.lateTime);
+        return applyLateStylesToBlocks(tournament, cutoff, false);
+      }
+
+      if (isLateClosedSentinel(lateLevel) || isLateClosedSentinel(lateTime)) {
+        tournament.lateLevel = lateLevel;
+        tournament.lateTime = lateTime;
+        return applyLateStylesToBlocks(tournament, null, true);
+      }
+
       const yellow = resolveLateYellowLevel(tournament, overlay, markers);
       if (yellow != null) return applyLateStylesToBlocks(tournament, yellow, false);
+      if (lateCutoffLevelFromTime(tournament, lateTime) == null && looksLikeClockTime(lateTime)) {
+        tournament.lateTime = "";
+      }
+      if (eventIsDay2Flight(tournament)) {
+        return applyLateStylesToBlocks(tournament, null, true);
+      }
       return applyLateStylesToBlocks(tournament, null, false);
     }
 
     function tournamentHasLateCutoff(tournament) {
+      if (eventHasNoLateRegistration(tournament)) return true;
+      if (isLateClosedSentinel(tournament?.lateLevel) || isLateClosedSentinel(tournament?.lateTime)) {
+        return true;
+      }
+      if (eventIsDay2Flight(tournament)) return true;
       return !!(
         parseLateLevelNumber(tournament?.lateLevel) ||
         (tournament?.yellowLevel != null && tournament.yellowLevel !== "") ||
-        String(tournament?.lateTime || "").trim()
+        lateCutoffLevelFromTime(tournament, tournament?.lateTime) != null
       );
     }
 
@@ -6254,12 +6316,12 @@
           i++;
           continue;
         }
-        if (!out.lateLevel && looksLikeLateLevelValue(v)) {
-          out.lateLevel = String(parseLateLevelNumber(v) ?? v);
+        if (!out.lateLevel && looksLikeLateLevelValue(v) && parseLateLevelNumber(v) != null) {
+          out.lateLevel = String(parseLateLevelNumber(v));
           i++;
           continue;
         }
-        if (!out.lateTime && looksLikeClockTime(v)) {
+        if (out.lateLevel && !out.lateTime && looksLikeClockTime(v)) {
           out.lateTime = String(v).trim().replace(/^(\d{1,2}:\d{2})(?::\d{2})?$/, "$1");
           i++;
           continue;
@@ -6445,11 +6507,11 @@
           }
           if (/^late\s*lv\.?$/i.test(label) && !out.lateLevel) {
             const v = String(grid[r]?.[c + 1] || "").trim();
-            if (/^\d{1,2}$/.test(v)) out.lateLevel = v;
+            if (/^\d{1,2}$/.test(v) || isLateClosedSentinel(v)) out.lateLevel = v;
           }
           if (labelLower === "late time" && !out.lateTime) {
             const v = String(grid[r]?.[c + 1] || "").trim();
-            if (/\d{1,2}:\d{2}/.test(v)) out.lateTime = v;
+            if (/\d{1,2}:\d{2}/.test(v) || isLateClosedSentinel(v)) out.lateTime = v;
           }
         }
       }
@@ -7902,6 +7964,16 @@
 
     function getBlockClass(block, tournament) {
       if (block.type === "break") return "break";
+      if (eventHasNoLateRegistration(tournament)) {
+        const cutoff =
+          parseLateLevelNumber(tournament?.lateLevel) ??
+          (isValidLateCutoffLevel(tournament?.yellowLevel) ? Number(tournament.yellowLevel) : null);
+        if (cutoff != null && block.levelNum != null) {
+          return block.levelNum > cutoff ? "level-late" : "level";
+        }
+        return "level";
+      }
+      if (tournament?.allLevelsLate) return "level-late";
       const cutoff =
         parseLateLevelNumber(tournament?.lateLevel) ??
         (isValidLateCutoffLevel(tournament?.yellowLevel) ? Number(tournament.yellowLevel) : null);
