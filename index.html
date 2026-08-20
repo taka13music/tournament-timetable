@@ -110,12 +110,217 @@
       box-shadow: var(--shadow-sm);
     }
 
+    .editor-home {
+      margin-bottom: 14px;
+    }
+
+    .editor-home-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .editor-home-bar h2 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+      letter-spacing: -0.02em;
+    }
+
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .event-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 16px;
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--panel);
+      box-shadow: var(--shadow-sm);
+      font: inherit;
+      color: inherit;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .event-list-item:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(99, 102, 241, 0.04);
+      box-shadow: var(--shadow-md);
+    }
+
+    .event-list-item-main {
+      min-width: 0;
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+    }
+
+    .event-list-item-name {
+      display: block;
+      font-size: 15px;
+      font-weight: var(--font-bold);
+      margin-bottom: 4px;
+    }
+
+    .event-list-item-meta {
+      display: block;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    .event-list-item-actions {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .event-list-item-open {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--accent);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 6px 8px;
+      font: inherit;
+    }
+
+    .event-list-item-open:hover {
+      text-decoration: underline;
+    }
+
+    .event-list-item-delete {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: #b91c1c;
+      border: 1px solid rgba(185, 28, 28, 0.28);
+      background: #fff;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font: inherit;
+    }
+
+    .event-list-item-delete:hover {
+      background: rgba(185, 28, 28, 0.06);
+      border-color: rgba(185, 28, 28, 0.45);
+    }
+
+    .event-list-empty {
+      padding: 36px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: var(--text-sm);
+      line-height: 1.7;
+    }
+
+    .editor-event-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .editor-event-toolbar .btn-link-back {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      cursor: pointer;
+      padding: 6px 0;
+    }
+
+    .editor-event-toolbar .btn-link-back:hover {
+      color: var(--accent);
+    }
+
     .controls {
       display: flex;
       flex-direction: column;
       gap: 14px;
       padding: 16px;
       margin-bottom: 14px;
+    }
+
+    .controls-event-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .controls-event-actions .btn-secondary {
+      padding: 9px 12px;
+      font-size: var(--text-sm);
+    }
+
+    .controls-detail-grid {
+      display: grid;
+      grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .controls-view-url {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 14px;
+      background: rgba(99, 102, 241, 0.05);
+      border: 1px solid rgba(99, 102, 241, 0.18);
+      border-radius: var(--radius-sm);
+    }
+
+    .controls-view-url-label {
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: #4338ca;
+      flex: 0 0 auto;
+    }
+
+    .controls-view-url code {
+      flex: 1 1 220px;
+      font-size: var(--text-xs);
+      word-break: break-all;
+      color: var(--text);
+    }
+
+    .viewer-base-url-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .viewer-base-url-row input {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+
+    .viewer-base-url-row input[readonly] {
+      background: #f8fafc;
+      color: var(--muted);
+      cursor: default;
     }
 
     .controls-sheet-grid {
@@ -128,87 +333,131 @@
       grid-column: 1 / -1;
     }
 
-    .controls-footer {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-      gap: 12px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-    }
-
-    .controls-group {
-      padding: 12px 14px;
-      border-radius: var(--radius-sm);
-      background: #f8fafc;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-    }
-
-    .controls-group-publish {
-      max-width: 360px;
-      background: rgba(99, 102, 241, 0.05);
-      border-color: rgba(99, 102, 241, 0.18);
-    }
-
-    .controls-group-head {
-      margin-bottom: 10px;
-    }
-
-    .controls-group-title {
-      display: block;
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--text);
-      line-height: 1.3;
-    }
-
-    .controls-group-desc {
-      display: block;
-      margin-top: 4px;
-      font-size: var(--text-xs);
-      color: #94a3b8;
-      line-height: 1.55;
-    }
-
-    .controls-group-desc code {
-      font-size: 10px;
-      background: rgba(148, 163, 184, 0.14);
-      padding: 1px 4px;
-      border-radius: 3px;
-    }
-
-    .controls-group-body {
+    .controls-detail-actions {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
       gap: 8px;
+      align-items: center;
     }
 
-    .controls-group-body input {
-      flex: 1 1 160px;
-      min-width: 0;
-      max-width: 220px;
+    .github-settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .github-settings .field-token {
+      grid-column: 1 / -1;
+    }
+
+    .publish-advanced {
+      margin-top: 4px;
+    }
+
+    .publish-advanced summary,
+    .editor-settings-details summary {
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .editor-settings-details {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .editor-settings-details + .editor-settings-details {
+      margin-top: 4px;
+    }
+
+    .publish-advanced-body {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .publish-result-url {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 9px 11px;
-      font: inherit;
-      font-size: var(--text-base);
+      word-break: break-all;
+      font-size: var(--text-sm);
+    }
+
+    .publish-result-url code {
+      flex: 1 1 200px;
+    }
+
+    .viewer-event-picker {
+      display: none;
+      padding: 28px 20px;
+      text-align: center;
+    }
+
+    body.viewer-mode .viewer-event-picker.visible {
+      display: block;
+    }
+
+    .viewer-event-picker h2 {
+      font-size: var(--text-lg);
+      margin-bottom: 8px;
+    }
+
+    .viewer-event-picker p {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: var(--text-sm);
+    }
+
+    .viewer-event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .viewer-event-list a {
+      display: block;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       background: #fff;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: var(--font-semibold);
+      text-align: left;
     }
 
-    .controls-group-body input::placeholder {
-      color: #d8dee9;
-      opacity: 1;
+    .viewer-event-list a:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(99, 102, 241, 0.06);
     }
 
-    .controls-group-body input:focus::placeholder {
-      color: #e5eaf2;
+    body.editor-view-list .editor-event,
+    body.editor-view-list .meta-row,
+    body.editor-view-list .overlap-panel,
+    body.editor-view-list .board-wrap {
+      display: none !important;
     }
 
-    .controls-group-body input:focus {
-      outline: none;
-      border-color: rgba(99, 102, 241, 0.55);
-      box-shadow: 0 0 0 3px var(--accent-soft);
+    body.editor-view-event .editor-home {
+      display: none !important;
+    }
+
+    body.editor-view-list .status:empty {
+      display: none;
     }
 
     .btn-action {
@@ -264,16 +513,16 @@
     }
 
     @media (max-width: 720px) {
+      .controls-detail-grid {
+        grid-template-columns: 1fr;
+      }
+
       .controls-sheet-grid {
         grid-template-columns: 1fr;
       }
 
-      .controls-footer {
+      .github-settings {
         grid-template-columns: 1fr;
-      }
-
-      .controls-group-body input {
-        max-width: none;
       }
     }
 
@@ -531,6 +780,12 @@
         flex: 0 0 auto;
         width: auto;
         justify-content: flex-end;
+      }
+
+      body.viewer-mode .viewer-event-picker {
+        order: 4;
+        flex: 0 0 auto;
+        margin-bottom: 6px;
       }
 
       body.viewer-mode .board-wrap {
@@ -1361,6 +1616,14 @@
       display: none !important;
     }
 
+    .viewer-only {
+      display: none !important;
+    }
+
+    body.viewer-mode .viewer-only {
+      display: inline-block !important;
+    }
+
     .viewer-banner {
       display: none;
       align-items: center;
@@ -1567,52 +1830,109 @@
       <button type="button" id="viewerRefreshBtn" class="btn-secondary" hidden>&#26368;&#26032;&#12395;&#26356;&#26032;</button>
     </div>
 
-    <div class="controls surface editor-only">
-      <div class="controls-sheet-grid">
-        <div class="field field-url">
-          <label for="sheetUrl">&#12473;&#12488;&#12521;&#12463;&#12481;&#12515;&#12540;&#12471;&#12540;&#12488;URL</label>
-          <input id="sheetUrl" type="url" value="" placeholder="https://docs.google.com/spreadsheets/d/..." />
-        </div>
-        <div class="field">
-          <label for="sheetStart">&#12479;&#12502;&#21517;&#65288;&#38283;&#22987;&#65289;</label>
-          <input id="sheetStart" type="text" placeholder="&#20363;: #02 Warm-up" value="" />
-          <span class="hint">&#12473;&#12503;&#12524;&#12483;&#12489;&#12471;&#12540;&#12488;&#19979;&#37096;&#12398;&#12471;&#12540;&#12488;&#12479;&#12502;&#21517;</span>
-        </div>
-        <div class="field">
-          <label for="sheetEnd">&#12479;&#12502;&#21517;&#65288;&#32066;&#20102;&#65289;</label>
-          <input id="sheetEnd" type="text" placeholder="&#20363;: #06 TORSE" value="" />
-          <span class="hint">&#38283;&#22987;&#12316;&#32066;&#20102;&#12398;&#38291;&#12398;&#12479;&#12502;&#12434;&#12377;&#12409;&#12390;&#35501;&#12415;&#36796;&#12415;</span>
-        </div>
+    <div class="editor-home editor-only" id="editorHome">
+      <div class="editor-home-bar">
+        <h2>&#22823;&#20250;</h2>
+        <button type="button" id="eventCreateBtn" class="btn-primary">&#26032;&#35215;&#20316;&#25104;</button>
       </div>
-      <div class="controls-footer">
-        <div class="controls-group controls-group-sync">
-          <div class="controls-group-head">
-            <span class="controls-group-title">&#12487;&#12540;&#12479;&#26356;&#26032;</span>
-            <span class="controls-group-desc">&#22793;&#26356;&#12398;&#12354;&#12427;&#12471;&#12540;&#12488;&#12384;&#12369;&#20877;&#21462;&#24471;&#65288;2&#22238;&#30446;&#20197;&#38477;&#65289;</span>
+      <div class="event-list" id="eventList"></div>
+      <div class="event-list-empty surface" id="eventListEmpty" hidden>
+        &#12414;&#12384;&#22823;&#20250;&#12364;&#12354;&#12426;&#12414;&#12379;&#12435;&#12290;<br />
+        &#12300;&#26032;&#35215;&#20316;&#25104;&#12301;&#12391;&#22823;&#20250;&#12434;&#20316;&#12387;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;
+      </div>
+    </div>
+
+    <div class="editor-event editor-only" id="editorEvent" hidden>
+      <div class="editor-event-toolbar">
+        <button type="button" class="btn-link-back" id="backToEventListBtn">&larr; &#22823;&#20250;&#19968;&#35239;</button>
+      </div>
+
+      <div class="controls surface">
+        <div class="controls-detail-grid">
+          <div class="field">
+            <label for="eventName">&#22823;&#20250;&#21517;</label>
+            <input id="eventName" type="text" value="" placeholder="&#20363;: JOPT 2025" />
           </div>
-          <div class="controls-group-body">
-            <button type="button" id="refreshBtn" class="btn-accent btn-action">&#26356;&#26032;</button>
+          <div class="field">
+            <label for="eventSlug">&#12473;&#12521;&#12483;&#12464;&#65288;URL&#29992;&#65289;</label>
+            <input id="eventSlug" type="text" value="" placeholder="&#20363;: jopt-2025" spellcheck="false" />
+          </div>
+          <div class="controls-event-actions">
+            <button type="button" id="eventSaveBtn" class="btn-secondary">&#35373;&#23450;&#12434;&#20445;&#23384;</button>
+            <button type="button" id="eventDeleteBtn" class="btn-secondary">&#21066;&#38500;</button>
           </div>
         </div>
-        <div class="controls-group controls-group-publish">
-          <div class="controls-group-head">
-            <span class="controls-group-title">&#38322;&#35239;&#29992;&#20844;&#38283;</span>
-            <span class="controls-group-desc">&#12300;&#29983;&#25104;&#12301;&#12391;&#38322;&#35239;&#29992; Zip &#65288;&#21152;&#24037;&#28168;&#12415;&#65289;&#12434;&#12480;&#12454;&#12531;&#12525;&#12540;&#12489;<br>Zip &#12501;&#12449;&#12452;&#12523;&#21517;&#12399;&#24517;&#38920;&#65288;.zip &#12399;&#33258;&#21205;&#12391;&#20184;&#12365;&#12414;&#12377;&#65289;<br>Netlify &#12395;&#12450;&#12483;&#12503;&#12525;&#12540;&#12489;&#65288;index.html &#21336;&#20307;&#12399;&#19981;&#21487;&#65289;</span>
+
+        <details class="editor-settings-details" open>
+          <summary>&#38322;&#35239;URL&#35373;&#23450;</summary>
+          <div class="controls-sheet-grid" style="margin-top: 12px;">
+            <div class="field field-url">
+              <label for="viewerBaseUrl">&#38322;&#35239;&#29992;&#12505;&#12540;&#12473;URL</label>
+              <div class="viewer-base-url-row">
+                <input
+                  id="viewerBaseUrl"
+                  type="url"
+                  value=""
+                  placeholder="&#20363;: https://tournament-timetable.surge.sh"
+                  spellcheck="false"
+                />
+                <button type="button" id="viewerBaseUrlEditBtn" class="btn-secondary" hidden>&#22793;&#26356;</button>
+                <button type="button" id="viewerBaseUrlCommitBtn" class="btn-primary" hidden>&#20445;&#23384;</button>
+                <button type="button" id="viewerBaseUrlCancelBtn" class="btn-secondary" hidden>&#12461;&#12515;&#12531;&#12475;&#12523;</button>
+              </div>
+              <span class="hint" id="viewerBaseUrlHint">&#31354;&#27396;&#12394;&#12425;&#20170;&#38283;&#12356;&#12390;&#12356;&#12427;&#12469;&#12452;&#12488;&#12434;&#20351;&#29992;&#12290;&#35373;&#23450;&#24460;&#12399;&#22522;&#26412;&#22793;&#26356;&#12391;&#12365;&#12414;&#12379;&#12435;</span>
+            </div>
           </div>
-          <div class="controls-group-body">
+        </details>
+
+        <div class="controls-view-url" id="eventViewUrlBar">
+          <span class="controls-view-url-label">&#38322;&#35239;URL</span>
+          <code id="eventViewUrlHint">?mode=view&amp;event=&#12473;&#12521;&#12483;&#12464;</code>
+          <button type="button" id="eventCopyViewUrlBtn" class="btn-secondary">URL&#12434;&#12467;&#12500;&#12540;</button>
+          <button type="button" id="openEventViewBtn" class="btn-primary">&#38322;&#35239;&#12434;&#38283;&#12367;</button>
+        </div>
+
+        <div class="controls-detail-actions">
+          <button type="button" id="fullLoadBtn" class="btn-primary btn-action" title="シートからタイムテーブルを新規読み込み">&#20844;&#38283;</button>
+          <button type="button" id="refreshBtn" class="btn-accent btn-action" title="変更点だけ差分更新">&#26356;&#26032;</button>
+          <span class="hint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#26356;&#26032;: &#22793;&#26356;&#20998;&#12398;&#12415;</span>
+        </div>
+
+        <details class="editor-settings-details" open>
+          <summary>&#12471;&#12540;&#12488;&#35373;&#23450;</summary>
+          <div class="controls-sheet-grid" style="margin-top: 12px;">
+            <div class="field field-url">
+              <label for="sheetUrl">&#12473;&#12488;&#12521;&#12463;&#12481;&#12515;&#12540;&#12471;&#12540;&#12488;URL</label>
+              <input id="sheetUrl" type="url" value="" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            </div>
+            <div class="field">
+              <label for="sheetStart">&#12479;&#12502;&#21517;&#65288;&#38283;&#22987;&#65289;</label>
+              <input id="sheetStart" type="text" placeholder="&#20363;: #02 Warm-up" value="" />
+              <span class="hint">&#12473;&#12503;&#12524;&#12483;&#12489;&#12471;&#12540;&#12488;&#19979;&#37096;&#12398;&#12471;&#12540;&#12488;&#12479;&#12502;&#21517;</span>
+            </div>
+            <div class="field">
+              <label for="sheetEnd">&#12479;&#12502;&#21517;&#65288;&#32066;&#20102;&#65289;</label>
+              <input id="sheetEnd" type="text" placeholder="&#20363;: #06 TORSE" value="" />
+              <span class="hint">&#38283;&#22987;&#12316;&#32066;&#20102;&#12398;&#38291;&#12398;&#12479;&#12502;&#12434;&#12377;&#12409;&#12390;&#35501;&#12415;&#36796;&#12415;</span>
+            </div>
+          </div>
+        </details>
+
+        <details class="editor-settings-details publish-advanced">
+          <summary>&#19978;&#32026;&#32773;&#21521;&#12369;: Zip &#29983;&#25104;&#65288;Netlify &#25163;&#21205;&#12450;&#12483;&#12503;&#29992;&#65289;</summary>
+          <div class="publish-advanced-body">
             <input
               id="viewerZipName"
               type="text"
               value=""
-              required
               placeholder="&#20363;: tournament.zip"
               spellcheck="false"
-              title="&#12480;&#12454;&#12531;&#12525;&#12540;&#12489;&#12377;&#12427; Zip &#12398;&#12501;&#12449;&#12452;&#12523;&#21517;&#65288;&#24517;&#38920;&#12289;.zip &#12399;&#33258;&#21205;&#12391;&#20184;&#12365;&#12414;&#12377;&#65289;"
-              aria-label="Zip &#12501;&#12449;&#12452;&#12523;&#21517;&#65288;&#24517;&#38920;&#65289;"
+              title="Zip &#12501;&#12449;&#12452;&#12523;&#21517;"
+              aria-label="Zip &#12501;&#12449;&#12452;&#12523;&#21517;"
             />
-            <button type="button" id="publishUrlBtn" class="btn-primary btn-action">&#29983;&#25104;</button>
+            <button type="button" id="publishUrlBtn" class="btn-secondary btn-action">Zip &#29983;&#25104;</button>
           </div>
-        </div>
+        </details>
       </div>
     </div>
 
@@ -1627,11 +1947,16 @@
           <span class="hour-height-label-short" aria-hidden="true">1&#26178;&#38291; (px)</span>
           <input id="hourHeight" type="number" value="60" min="30" max="120" title="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" aria-label="1&#26178;&#38291;&#12398;&#39640;&#12373; (px)" />
         </label>
-        <button type="button" id="exportSvgBtn" class="btn-secondary" disabled title="Adobe Illustrator&#21521;&#12369;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;SVG">SVG&#20986;&#21147;</button>
+        <button type="button" id="exportSvgBtn" class="btn-secondary viewer-only" disabled title="Adobe Illustrator&#21521;&#12369;&#12398;&#12479;&#12452;&#12512;&#12486;&#12540;&#12502;&#12523;SVG">SVG&#20986;&#21147;</button>
       </div>
     </div>
     <div class="overlap-panel surface" id="overlapPanel"></div>
     <div class="status" id="status"></div>
+    <div class="viewer-event-picker surface" id="viewerEventPicker" hidden>
+      <h2>&#22823;&#20250;&#12434;&#36984;&#25246;</h2>
+      <p>&#38322;&#35239;&#12377;&#12427;&#22823;&#20250;&#12434;&#9078;&#12435;&#12391;&#12367;&#12384;&#12373;&#12356;&#12290;</p>
+      <div class="viewer-event-list" id="viewerEventList"></div>
+    </div>
     <div class="board-wrap">
       <div id="board" class="empty"></div>
     </div>
@@ -1639,18 +1964,23 @@
 
   <div class="publish-modal editor-only" id="publishModal" aria-hidden="true">
     <div class="publish-modal-card" role="dialog" aria-labelledby="publishModalTitle">
-      <h2 id="publishModalTitle">&#38322;&#35239;&#29992; Zip &#12434;&#29983;&#25104;&#12375;&#12414;&#12375;&#12383;</h2>
+      <h2 id="publishModalTitle">&#20844;&#38283;&#12375;&#12414;&#12375;&#12383;</h2>
       <p id="publishModalDesc" class="publish-modal-desc"></p>
+      <div class="publish-result-url" id="publishResultUrlWrap" hidden>
+        <code id="publishResultUrl"></code>
+        <button type="button" class="btn-secondary" id="publishCopyViewUrlBtn">URL&#12434;&#12467;&#12500;&#12540;</button>
+        <a class="btn-primary" id="publishOpenViewLink" href="#" target="_blank" rel="noopener noreferrer">&#38322;&#35239;&#12434;&#38283;&#12367;</a>
+      </div>
       <div class="publish-deploy-block" id="publishWorkflowBlock">
         <p class="publish-deploy-block-title">&#20844;&#38283;&#12398;&#27969;&#12428;</p>
         <ol class="publish-steps" id="publishWorkflowSteps"></ol>
       </div>
-      <div class="publish-deploy-block" id="publishDeployBlock">
-        <p class="publish-deploy-block-title">Netlify &#12391;&#12398;&#20844;&#38283;&#25163;&#38918;</p>
+      <div class="publish-deploy-block" id="publishDeployBlock" hidden>
+        <p class="publish-deploy-block-title">Netlify &#12391;&#12398;&#20844;&#38283;&#25163;&#38918;&#65288;&#19978;&#32026;&#32773;&#21521;&#12369;&#65289;</p>
         <ol class="publish-steps" id="publishSteps"></ol>
       </div>
-      <div class="publish-deploy-block" id="publishUpdateBlock">
-        <p class="publish-deploy-block-title">&#26356;&#26032;&#26178;&#65288;&#20877;&#12300;&#29983;&#25104;&#12301;&#12398;&#12415;&#65289;</p>
+      <div class="publish-deploy-block" id="publishUpdateBlock" hidden>
+        <p class="publish-deploy-block-title">&#26356;&#26032;&#26178;</p>
         <ol class="publish-steps" id="publishUpdateSteps"></ol>
       </div>
       <div class="publish-modal-actions">
@@ -1683,8 +2013,20 @@
     let suppressDaySelectChange = false;
     let loadInProgress = false;
     let exportInProgress = false;
-    const PUBLISH_BTN_LABEL = "\u751f\u6210";
+    let activeLoadMode = null;
+    const PUBLISH_BTN_LABEL = "Zip \u751f\u6210";
     const PUBLISH_BTN_BUSY_LABEL = "\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u4e2d\u2026";
+    const FULL_LOAD_BTN_LABEL = "\u516c\u958b";
+    const FULL_LOAD_BTN_BUSY_LABEL = "\u8aad\u307f\u8fbc\u307f\u4e2d\u2026";
+    const DIFF_UPDATE_BTN_LABEL = "\u66f4\u65b0";
+    const DIFF_UPDATE_BTN_BUSY_LABEL = "\u5dee\u5206\u66f4\u65b0\u4e2d\u2026";
+    const GITHUB_SETTINGS_KEY = "tournamentGithubPublishSettings";
+    const DEFAULT_GITHUB_SETTINGS = {
+      token: "",
+      owner: "taka13music",
+      repo: "tournament-timetable",
+      branch: "main"
+    };
     let loadGeneration = 0;
     let overlapDisplayBands = [];
     let lastOverlapBands = [];
@@ -1740,7 +2082,1145 @@
 
     const EDITOR_SITE_ORIGIN = "https://tournament-timetable.surge.sh";
     const PUBLISHED_JSON_PATH = "published/timetable.json";
+    const EVENTS_JSON_PATH = "events.json";
+    const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
+    const VIEWER_BASE_URL_KEY = "tournamentViewerBaseUrl";
     const VIEWER_DEPLOY_ZIP_DEFAULT = "viewer.zip";
+    const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
+    const TIMETABLE_CACHE_STORE = "byEvent";
+    const TIMETABLE_CACHE_VERSION = 1;
+    const TIMETABLE_SYNC_CHANNEL = "tournamentTimetableSync";
+    const TIMETABLE_SYNC_PING_KEY = "tournamentTimetableSyncPing";
+    let viewerAppliedSavedAt = "";
+    let viewerSyncChannel = null;
+
+    let eventRegistry = { version: 1, events: [], selectedId: null };
+
+    function normalizeEventSlug(raw) {
+      return String(raw || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    }
+
+    function createEventId() {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+      return `evt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function createEmptyEvent(partial = {}) {
+      return {
+        id: partial.id || createEventId(),
+        name: String(partial.name || "").trim(),
+        slug: normalizeEventSlug(partial.slug || partial.name || ""),
+        sheetUrl: String(partial.sheetUrl || "").trim(),
+        sheetStart: String(partial.sheetStart || "").trim(),
+        sheetEnd: String(partial.sheetEnd || "").trim()
+      };
+    }
+
+    function getSelectedEvent() {
+      if (!eventRegistry.events.length) return null;
+      return (
+        eventRegistry.events.find((event) => event.id === eventRegistry.selectedId) ||
+        eventRegistry.events[0]
+      );
+    }
+
+    function getPublishedPathForEvent(event) {
+      const slug = normalizeEventSlug(event?.slug);
+      return slug ? `published/${slug}.json` : PUBLISHED_JSON_PATH;
+    }
+
+    function readEventFormValues() {
+      return {
+        name: String($("eventName")?.value || "").trim(),
+        slug: normalizeEventSlug($("eventSlug")?.value || ""),
+        sheetUrl: String($("sheetUrl")?.value || "").trim(),
+        sheetStart: String($("sheetStart")?.value || "").trim(),
+        sheetEnd: String($("sheetEnd")?.value || "").trim()
+      };
+    }
+
+    function applyEventToForm(event) {
+      if ($("eventName")) $("eventName").value = event?.name || "";
+      if ($("eventSlug")) $("eventSlug").value = event?.slug || "";
+      applySheetConfigToDom({
+        sheetUrl: event?.sheetUrl || "",
+        sheetStart: event?.sheetStart || "",
+        sheetEnd: event?.sheetEnd || ""
+      });
+      const zipEl = $("viewerZipName");
+      if (zipEl && event?.slug && !zipEl.value.trim()) {
+        zipEl.placeholder = `${event.slug}.zip`;
+      }
+      updateEventViewUrlHint(event);
+    }
+
+    let viewerBaseUrlEditing = false;
+    let viewerBaseUrlDraft = "";
+
+    function normalizeViewerBaseUrl(raw) {
+      let value = String(raw || "").trim();
+      if (!value) return "";
+      if (!/^https?:\/\//i.test(value)) value = `https://${value}`;
+      try {
+        const url = new URL(value);
+        return `${url.origin}${url.pathname}`.replace(/\/$/, "");
+      } catch (_) {
+        return value.replace(/\/$/, "");
+      }
+    }
+
+    function loadViewerBaseUrl() {
+      try {
+        return normalizeViewerBaseUrl(localStorage.getItem(VIEWER_BASE_URL_KEY) || "");
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function syncViewerBaseUrlControls() {
+      const input = $("viewerBaseUrl");
+      const editBtn = $("viewerBaseUrlEditBtn");
+      const commitBtn = $("viewerBaseUrlCommitBtn");
+      const cancelBtn = $("viewerBaseUrlCancelBtn");
+      const hint = $("viewerBaseUrlHint");
+      if (!input) return;
+      const saved = loadViewerBaseUrl();
+      const locked = !!saved && !viewerBaseUrlEditing;
+      input.readOnly = locked;
+      if (editBtn) editBtn.hidden = !saved || viewerBaseUrlEditing;
+      if (commitBtn) commitBtn.hidden = !viewerBaseUrlEditing && !!saved;
+      if (cancelBtn) cancelBtn.hidden = !viewerBaseUrlEditing;
+      if (!viewerBaseUrlEditing) {
+        input.value = saved;
+      }
+      if (hint) {
+        if (viewerBaseUrlEditing) {
+          hint.textContent = "新しいURLを入力して「保存」してください。空欄にすると今開いているサイトを使います。";
+        } else if (saved) {
+          hint.textContent = "設定済みです。変更する場合は「変更」を押してください。";
+        } else {
+          hint.textContent = "空欄なら今開いているサイトを使用します。初回はここに入力して「保存」してください。";
+        }
+      }
+    }
+
+    function saveViewerBaseUrl(raw, { announce = false } = {}) {
+      const normalized = normalizeViewerBaseUrl(raw);
+      try {
+        if (normalized) localStorage.setItem(VIEWER_BASE_URL_KEY, normalized);
+        else localStorage.removeItem(VIEWER_BASE_URL_KEY);
+      } catch (err) {
+        console.warn("viewer base url save failed", err);
+        if (announce) {
+          setStatus("閲覧用ベースURLの保存に失敗しました（ブラウザの保存容量を確認してください）", true);
+        }
+        return "";
+      }
+      viewerBaseUrlEditing = false;
+      viewerBaseUrlDraft = "";
+      syncViewerBaseUrlControls();
+      updateEventViewUrlHint();
+      renderEventList();
+      if (announce) {
+        setStatus(
+          normalized
+            ? `閲覧用ベースURLを保存しました: ${normalized}`
+            : "閲覧用ベースURLをクリアしました（今開いているサイトを使用）"
+        );
+      }
+      return normalized;
+    }
+
+    function beginViewerBaseUrlEdit() {
+      const saved = loadViewerBaseUrl();
+      if (saved) {
+        const ok = confirm(
+          "閲覧用ベースURLを変更しますか？\n\n" +
+            `現在: ${saved}\n\n` +
+            "共有中の閲覧URLが変わるため、関係者への周知が必要になる場合があります。"
+        );
+        if (!ok) return;
+      }
+      viewerBaseUrlEditing = true;
+      viewerBaseUrlDraft = saved;
+      syncViewerBaseUrlControls();
+      const input = $("viewerBaseUrl");
+      if (input) {
+        input.value = saved;
+        input.focus();
+        input.select();
+      }
+    }
+
+    function cancelViewerBaseUrlEdit() {
+      viewerBaseUrlEditing = false;
+      viewerBaseUrlDraft = "";
+      syncViewerBaseUrlControls();
+      updateEventViewUrlHint();
+      setStatus("閲覧用ベースURLの変更をキャンセルしました");
+    }
+
+    function commitViewerBaseUrlEdit() {
+      const next = normalizeViewerBaseUrl($("viewerBaseUrl")?.value || "");
+      const prev = loadViewerBaseUrl();
+      if (next === prev) {
+        viewerBaseUrlEditing = false;
+        syncViewerBaseUrlControls();
+        setStatus("閲覧用ベースURLに変更はありません");
+        return;
+      }
+      if (prev && next !== prev) {
+        const ok = confirm(
+          "この内容で閲覧用ベースURLを保存しますか？\n\n" +
+            `変更前: ${prev || "（未設定）"}\n` +
+            `変更後: ${next || "（未設定＝今開いているサイト）"}`
+        );
+        if (!ok) return;
+      }
+      saveViewerBaseUrl(next, { announce: true });
+    }
+
+    function applyViewerBaseUrlToForm() {
+      viewerBaseUrlEditing = false;
+      viewerBaseUrlDraft = "";
+      syncViewerBaseUrlControls();
+    }
+
+    function getViewerSiteOrigin() {
+      const configured = loadViewerBaseUrl();
+      if (configured) return configured;
+      return String(location.origin || EDITOR_SITE_ORIGIN).replace(/\/$/, "");
+    }
+
+    function buildEventViewUrl(event) {
+      const slug = normalizeEventSlug(event?.slug || $("eventSlug")?.value || "");
+      if (!slug) return "";
+      const base = getViewerSiteOrigin();
+      return `${base}/?mode=view&event=${encodeURIComponent(slug)}`;
+    }
+
+    function updateEventViewUrlHint(event) {
+      const hint = $("eventViewUrlHint");
+      if (!hint) return;
+      const url = buildEventViewUrl(event || getSelectedEvent());
+      hint.textContent = url || "?mode=view&event=スラッグ";
+    }
+
+    function parseEditorHash() {
+      const raw = String(location.hash || "").replace(/^#/, "");
+      const path = raw.replace(/^\//, "");
+      if (!path || path === "/") return { view: "list", eventId: null };
+      const match = path.match(/^event\/([^/?#]+)/);
+      if (match) return { view: "event", eventId: decodeURIComponent(match[1]) };
+      return { view: "list", eventId: null };
+    }
+
+    function setEditorHash(view, eventId) {
+      const next =
+        view === "event" && eventId
+          ? `#/event/${encodeURIComponent(eventId)}`
+          : "#/";
+      if (location.hash !== next) {
+        location.hash = next;
+      } else {
+        applyEditorRoute({ skipHashWrite: true });
+      }
+    }
+
+    function showEditorView(view) {
+      const home = $("editorHome");
+      const detail = $("editorEvent");
+      document.body.classList.toggle("editor-view-list", view === "list");
+      document.body.classList.toggle("editor-view-event", view === "event");
+      if (home) home.hidden = view !== "list";
+      if (detail) detail.hidden = view !== "event";
+    }
+
+    function renderEventList() {
+      const list = $("eventList");
+      const empty = $("eventListEmpty");
+      if (!list) return;
+      list.innerHTML = "";
+      if (!eventRegistry.events.length) {
+        if (empty) empty.hidden = false;
+        return;
+      }
+      if (empty) empty.hidden = true;
+      for (const event of eventRegistry.events) {
+        const row = document.createElement("div");
+        row.className = "event-list-item";
+        row.dataset.eventId = event.id;
+        const url = buildEventViewUrl(event);
+
+        const mainBtn = document.createElement("button");
+        mainBtn.type = "button";
+        mainBtn.className = "event-list-item-main";
+        mainBtn.innerHTML = `
+          <span class="event-list-item-name">${escapeHtml(event.name || "無題の大会")}</span>
+          <span class="event-list-item-meta">${escapeHtml(event.slug || "—")}${
+            url ? `<br>${escapeHtml(url)}` : ""
+          }</span>
+        `;
+        mainBtn.addEventListener("click", () => openEventDetail(event.id));
+
+        const actions = document.createElement("div");
+        actions.className = "event-list-item-actions";
+
+        const openBtn = document.createElement("button");
+        openBtn.type = "button";
+        openBtn.className = "event-list-item-open";
+        openBtn.textContent = "開く";
+        openBtn.addEventListener("click", () => openEventDetail(event.id));
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "event-list-item-delete";
+        deleteBtn.textContent = "削除";
+        deleteBtn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          deleteEventById(event.id);
+        });
+
+        actions.appendChild(openBtn);
+        actions.appendChild(deleteBtn);
+        row.appendChild(mainBtn);
+        row.appendChild(actions);
+        list.appendChild(row);
+      }
+    }
+
+    function renderEventSelect() {
+      renderEventList();
+    }
+
+    async function applyEditorRoute({ skipHashWrite = false, autoLoad = true } = {}) {
+      if (IS_VIEWER_MODE) return;
+      const route = parseEditorHash();
+      if (route.view === "event" && route.eventId) {
+        const exists = eventRegistry.events.some((event) => event.id === route.eventId);
+        if (!exists) {
+          if (!skipHashWrite) setEditorHash("list");
+          else {
+            showEditorView("list");
+            renderEventList();
+          }
+          setStatus("指定の大会が見つかりません", true);
+          return;
+        }
+        selectEventById(route.eventId, { clearBoard: true, persist: true });
+        showEditorView("event");
+        applyViewerBaseUrlToForm();
+        updateEventViewUrlHint(getSelectedEvent());
+
+        const restored = await tryRestoreTimetableCache(route.eventId);
+        if (restored) {
+          const when = formatTimetableCacheSavedAt(restored.savedAt);
+          setStatus(
+            when
+              ? `保存済みのタイムテーブルを表示しています（${when}）。最新にするには「更新」を押してください。`
+              : "保存済みのタイムテーブルを表示しています。最新にするには「更新」を押してください。"
+          );
+          return;
+        }
+
+        if (autoLoad && String($("sheetUrl")?.value || "").trim()) {
+          try {
+            await refreshTimetable();
+          } catch (err) {
+            setStatus(formatFetchError(err), true);
+          }
+        } else if (!String($("sheetUrl")?.value || "").trim()) {
+          const board = $("board");
+          if (board && board.classList.contains("empty")) {
+            board.innerHTML =
+              "シート設定を入力して「更新」を押すと、タイムテーブルが表示されます。";
+          }
+        }
+        return;
+      }
+      showEditorView("list");
+      renderEventList();
+    }
+
+    function openEventDetail(eventId) {
+      setEditorHash("event", eventId);
+    }
+
+    async function backToEventList() {
+      saveCurrentEventFromForm({ announce: false });
+      if (loadedFromSheet && Object.keys(tournamentsByDay).length) {
+        await persistTimetableCache();
+      }
+      setEditorHash("list");
+      setStatus("");
+    }
+
+    function createNewEventAndOpen() {
+      const event = createEmptyEvent({
+        name: "新しい大会",
+        slug: "",
+        sheetUrl: "",
+        sheetStart: "",
+        sheetEnd: ""
+      });
+      let baseSlug = normalizeEventSlug(event.name) || "event";
+      let slug = baseSlug;
+      let n = 2;
+      while (eventRegistry.events.some((item) => item.slug === slug)) {
+        slug = `${baseSlug}-${n}`;
+        n += 1;
+      }
+      event.slug = slug;
+      eventRegistry.events.push(event);
+      eventRegistry.selectedId = event.id;
+      persistEventRegistry();
+      renderEventList();
+      setEditorHash("event", event.id);
+      setStatus("大会を作成しました。名前とシートを設定してください。");
+      setTimeout(() => $("eventName")?.focus(), 0);
+    }
+
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+
+    async function copySelectedEventViewUrl() {
+      const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
+      const url = buildEventViewUrl(event);
+      if (!url) {
+        setStatus("先に大会スラッグを入力して保存してください", true);
+        $("eventSlug")?.focus();
+        return;
+      }
+      try {
+        await copyTextToClipboard(url);
+        updateEventViewUrlHint(event);
+        setStatus(`閲覧URLをコピーしました: ${url}`);
+      } catch (err) {
+        setStatus(`コピーに失敗しました: ${err.message || err}`, true);
+      }
+    }
+
+    async function openSelectedEventView() {
+      const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
+      const url = buildEventViewUrl(event);
+      if (!url) {
+        setStatus("先に大会スラッグを入力して保存してください", true);
+        $("eventSlug")?.focus();
+        return;
+      }
+      if (loadedFromSheet && Object.keys(tournamentsByDay).length) {
+        await persistTimetableCache(event?.id);
+      } else {
+        const cached = event?.id ? await loadTimetableCache(event.id) : null;
+        if (!cached) {
+          setStatus(
+            "閲覧できるタイムテーブルがありません。先に「公開」で読み込んでください。",
+            true
+          );
+          return;
+        }
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    function loadGithubSettings() {
+      try {
+        const raw = localStorage.getItem(GITHUB_SETTINGS_KEY);
+        if (!raw) return { ...DEFAULT_GITHUB_SETTINGS };
+        return { ...DEFAULT_GITHUB_SETTINGS, ...JSON.parse(raw) };
+      } catch (_) {
+        return { ...DEFAULT_GITHUB_SETTINGS };
+      }
+    }
+
+    function saveGithubSettingsFromForm({ announce = true } = {}) {
+      const settings = {
+        token: String($("githubToken")?.value || "").trim(),
+        owner: String($("githubOwner")?.value || "").trim() || DEFAULT_GITHUB_SETTINGS.owner,
+        repo: String($("githubRepo")?.value || "").trim() || DEFAULT_GITHUB_SETTINGS.repo,
+        branch: String($("githubBranch")?.value || "").trim() || DEFAULT_GITHUB_SETTINGS.branch
+      };
+      try {
+        localStorage.setItem(GITHUB_SETTINGS_KEY, JSON.stringify(settings));
+      } catch (_) {}
+      if (announce) {
+        setStatus(
+          settings.token
+            ? `GitHub 設定を保存しました（${settings.owner}/${settings.repo}@${settings.branch}）`
+            : "GitHub 設定を保存しました（Token 未入力のため公開はできません）"
+        );
+      }
+      return settings;
+    }
+
+    function applyGithubSettingsToForm(settings) {
+      const cfg = settings || loadGithubSettings();
+      if ($("githubToken")) $("githubToken").value = cfg.token || "";
+      if ($("githubOwner")) $("githubOwner").value = cfg.owner || DEFAULT_GITHUB_SETTINGS.owner;
+      if ($("githubRepo")) $("githubRepo").value = cfg.repo || DEFAULT_GITHUB_SETTINGS.repo;
+      if ($("githubBranch")) $("githubBranch").value = cfg.branch || DEFAULT_GITHUB_SETTINGS.branch;
+    }
+
+    function utf8ToBase64(text) {
+      const bytes = new TextEncoder().encode(String(text || ""));
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+
+    async function githubApiRequest(settings, path, options = {}) {
+      const url = `https://api.github.com${path}`;
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${settings.token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(options.headers || {})
+        }
+      });
+      const text = await res.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (_) {
+        data = { message: text };
+      }
+      if (!res.ok) {
+        const msg = data?.message || `GitHub API error (${res.status})`;
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    async function githubPutTextFile(settings, filePath, contentText, message) {
+      const apiPath = `/repos/${settings.owner}/${settings.repo}/contents/${filePath}`;
+      let sha = null;
+      try {
+        const existing = await githubApiRequest(
+          settings,
+          `${apiPath}?ref=${encodeURIComponent(settings.branch)}`
+        );
+        sha = existing?.sha || null;
+      } catch (err) {
+        if (!/Not Found/i.test(String(err.message || ""))) throw err;
+      }
+      const body = {
+        message,
+        content: utf8ToBase64(contentText),
+        branch: settings.branch
+      };
+      if (sha) body.sha = sha;
+      return githubApiRequest(settings, apiPath, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }
+
+    function showAppPublishModal({ event, viewUrl, commitUrl }) {
+      const modal = $("publishModal");
+      $("publishModalTitle").textContent = "公開しました";
+      $("publishModalDesc").innerHTML =
+        `大会「${escapeHtml(event.name || event.slug)}」を GitHub に公開しました。<br>` +
+        `Actions が Surge へ反映すると、下の閲覧URLで見られます。` +
+        (commitUrl
+          ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">commit を確認</a></span>`
+          : "");
+      $("publishWorkflowSteps").innerHTML = `
+        <li>管理画面で大会を更新</li>
+        <li>「公開」で GitHub に保存</li>
+        <li>Actions が Surge を自動デプロイ</li>
+        <li>大会ごとの閲覧URLを共有</li>
+      `;
+      const wrap = $("publishResultUrlWrap");
+      const code = $("publishResultUrl");
+      const openLink = $("publishOpenViewLink");
+      if (wrap && code && openLink) {
+        wrap.hidden = !viewUrl;
+        code.textContent = viewUrl || "";
+        openLink.href = viewUrl || "#";
+      }
+      const deployBlock = $("publishDeployBlock");
+      const updateBlock = $("publishUpdateBlock");
+      if (deployBlock) deployBlock.hidden = true;
+      if (updateBlock) updateBlock.hidden = true;
+      modal.classList.add("visible");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    async function publishEventToGithub() {
+      if (exportInProgress) return;
+      if (loadInProgress) {
+        setStatus("読み込み中です。完了してから「公開」してください", true);
+        return;
+      }
+      if (!Object.keys(tournamentsByDay).length) {
+        setStatus("公開するデータがありません。先に「更新」でシートを読み込んでください", true);
+        return;
+      }
+      const missingSheets = getMissingScheduledSheetNames();
+      if (missingSheets.length) {
+        setStatus(
+          `未読み込みのシートが ${missingSheets.length} 件あります。もう一度「更新」してください`,
+          true
+        );
+        return;
+      }
+      const sheetUrl = $("sheetUrl")?.value.trim();
+      if (!sheetUrl) {
+        setStatus("スプレッドシートURLが必要です", true);
+        $("sheetUrl")?.focus();
+        return;
+      }
+
+      const event = saveCurrentEventFromForm({ announce: false });
+      if (!event?.slug) {
+        setStatus("大会スラッグを入力して保存してください", true);
+        $("eventSlug")?.focus();
+        return;
+      }
+
+      const settings = saveGithubSettingsFromForm({ announce: false });
+      applyGithubSettingsToForm(settings);
+      if (!settings.token) {
+        setStatus("GitHub Token を入力して「設定を保存」してください", true);
+        $("githubToken")?.focus();
+        return;
+      }
+
+      setExportBusy(true);
+      try {
+        const config = buildPublishConfig();
+        const jsonText = buildPublishedJsonText(config);
+        const eventsText = buildEventsJsonText();
+        const publishedPath = getPublishedPathForEvent(event);
+        const message = `publish: ${event.slug} (${event.name || event.slug})`;
+
+        setStatus("GitHub に公開中…");
+        await githubPutTextFile(settings, EVENTS_JSON_PATH, eventsText, message);
+        await githubPutTextFile(settings, publishedPath, jsonText, message);
+        if (publishedPath !== PUBLISHED_JSON_PATH) {
+          await githubPutTextFile(settings, PUBLISHED_JSON_PATH, jsonText, `${message} (compat timetable.json)`);
+        }
+
+        const viewUrl = buildEventViewUrl(event);
+        const commitUrl = `https://github.com/${settings.owner}/${settings.repo}/commits/${encodeURIComponent(settings.branch)}`;
+        showAppPublishModal({ event, viewUrl, commitUrl });
+        setStatus(
+          `公開しました。まもなく ${viewUrl} で閲覧できます（Actions 反映後）`
+        );
+      } catch (e) {
+        setStatus(`公開に失敗しました: ${e.message || e}`, true);
+      } finally {
+        setExportBusy(false);
+      }
+    }
+
+    function syncSelectedEventFromForm() {
+      const selected = getSelectedEvent();
+      if (!selected) return null;
+      const values = readEventFormValues();
+      selected.name = values.name || selected.name || "無題の大会";
+      selected.slug = values.slug || normalizeEventSlug(selected.name) || selected.slug;
+      selected.sheetUrl = values.sheetUrl;
+      selected.sheetStart = values.sheetStart;
+      selected.sheetEnd = values.sheetEnd;
+      return selected;
+    }
+
+    function persistEventRegistry() {
+      try {
+        localStorage.setItem(
+          EVENTS_STORAGE_KEY,
+          JSON.stringify({
+            version: 1,
+            events: eventRegistry.events,
+            selectedId: eventRegistry.selectedId
+          })
+        );
+      } catch (_) {}
+    }
+
+    function openTimetableCacheDb() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          reject(new Error("IndexedDB unavailable"));
+          return;
+        }
+        const req = indexedDB.open(TIMETABLE_CACHE_DB, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(TIMETABLE_CACHE_STORE)) {
+            db.createObjectStore(TIMETABLE_CACHE_STORE);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error("IndexedDB open failed"));
+      });
+    }
+
+    async function idbTimetableCacheRequest(mode, fn) {
+      const db = await openTimetableCacheDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(TIMETABLE_CACHE_STORE, mode);
+        const store = tx.objectStore(TIMETABLE_CACHE_STORE);
+        let req;
+        try {
+          req = fn(store);
+        } catch (err) {
+          reject(err);
+          return;
+        }
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error("IndexedDB request failed"));
+      });
+    }
+
+    function getTimetableCacheSheetKey(config = null) {
+      const values = config || readEventFormValues();
+      return [
+        String(values.sheetUrl || "").trim(),
+        String(values.sheetStart || "").trim(),
+        String(values.sheetEnd || "").trim()
+      ].join("\n");
+    }
+
+    function buildTimetableCachePayload(eventId) {
+      if (!eventId || !Object.keys(tournamentsByDay || {}).length) return null;
+      const sheet = readEventFormValues();
+      const event = getSelectedEvent();
+      const slug = normalizeEventSlug(sheet.slug || event?.slug || "");
+      return {
+        version: TIMETABLE_CACHE_VERSION,
+        eventId,
+        slug,
+        eventName: sheet.name || event?.name || "",
+        savedAt: new Date().toISOString(),
+        sheetKey: getTimetableCacheSheetKey(sheet),
+        sheetUrl: sheet.sheetUrl,
+        sheetStart: sheet.sheetStart,
+        sheetEnd: sheet.sheetEnd,
+        hourHeight: Number($("hourHeight")?.value) || 60,
+        selectedDay,
+        dayTabItems: Array.isArray(dayTabItems) ? dayTabItems : [],
+        tournamentsByDay,
+        sheetSchedule: Array.isArray(sheetSchedule) ? sheetSchedule : [],
+        sheetSnapshotCache: sheetSnapshotCache || {},
+        lastLoadContext: lastLoadContext || "",
+        overlapHighlight: overlapHighlight || { mode: "none", bandId: null },
+        loadedFromSheet: !!loadedFromSheet
+      };
+    }
+
+    function timetableCacheSlugKey(slug) {
+      const normalized = normalizeEventSlug(slug);
+      return normalized ? `slug:${normalized}` : "";
+    }
+
+    function timetableCacheToViewerPayload(cache, eventMeta = null) {
+      if (!cache?.tournamentsByDay || !Object.keys(cache.tournamentsByDay).length) return null;
+      return {
+        version: 5,
+        mode: "snapshot-cache",
+        publishedAt: cache.savedAt || new Date().toISOString(),
+        eventId: cache.slug || eventMeta?.slug || "",
+        eventName: cache.eventName || eventMeta?.name || "",
+        sheetUrl: cache.sheetUrl || eventMeta?.sheetUrl || "",
+        sheetStart: cache.sheetStart || eventMeta?.sheetStart || "",
+        sheetEnd: cache.sheetEnd || eventMeta?.sheetEnd || "",
+        hourHeight: cache.hourHeight || 60,
+        selectedDay: cache.selectedDay || "",
+        dayTabItems: Array.isArray(cache.dayTabItems) ? cache.dayTabItems : [],
+        tournamentsByDay: cache.tournamentsByDay,
+        overlapHighlight: cache.overlapHighlight || { mode: "none", bandId: null }
+      };
+    }
+
+    function notifyTimetableCacheUpdated(payload) {
+      if (!payload?.slug) return;
+      const message = {
+        type: "timetable-updated",
+        slug: payload.slug,
+        eventId: payload.eventId,
+        savedAt: payload.savedAt || ""
+      };
+      try {
+        localStorage.setItem(
+          TIMETABLE_SYNC_PING_KEY,
+          JSON.stringify({ ...message, t: Date.now() })
+        );
+      } catch (_) {}
+      try {
+        const channel = new BroadcastChannel(TIMETABLE_SYNC_CHANNEL);
+        channel.postMessage(message);
+        channel.close();
+      } catch (_) {}
+    }
+
+    function getViewerEventSlug() {
+      const params = new URLSearchParams(location.search);
+      const raw = params.get("event") || params.get("e") || params.get("p") || "";
+      if (isEmbeddedPublishPayload(raw)) return "";
+      return normalizeEventSlug(raw);
+    }
+
+    async function persistTimetableCache(eventId = eventRegistry.selectedId) {
+      if (IS_VIEWER_MODE) return false;
+      const payload = buildTimetableCachePayload(eventId);
+      if (!payload) return false;
+      try {
+        await idbTimetableCacheRequest("readwrite", (store) => {
+          store.put(payload, eventId);
+          const slugKey = timetableCacheSlugKey(payload.slug);
+          if (slugKey) store.put(payload, slugKey);
+          return store.get(eventId);
+        });
+        notifyTimetableCacheUpdated(payload);
+        return true;
+      } catch (err) {
+        console.warn("timetable cache save failed", err);
+        return false;
+      }
+    }
+
+    async function loadTimetableCache(eventId) {
+      if (!eventId) return null;
+      try {
+        const payload = await idbTimetableCacheRequest("readonly", (store) => store.get(eventId));
+        if (!payload || payload.version !== TIMETABLE_CACHE_VERSION) return null;
+        return payload;
+      } catch (err) {
+        console.warn("timetable cache load failed", err);
+        return null;
+      }
+    }
+
+    async function loadTimetableCacheForViewerSlug(slug) {
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized) return null;
+      const slugKey = timetableCacheSlugKey(normalized);
+      let cache = slugKey ? await loadTimetableCache(slugKey) : null;
+      if (cache) return cache;
+      const registry = loadEventRegistryFromStorage();
+      const event = (registry?.events || []).find(
+        (item) => normalizeEventSlug(item.slug) === normalized
+      );
+      if (!event?.id) return null;
+      return loadTimetableCache(event.id);
+    }
+
+    async function deleteTimetableCache(eventId) {
+      if (!eventId) return;
+      try {
+        const existing = await loadTimetableCache(eventId);
+        await idbTimetableCacheRequest("readwrite", (store) => {
+          store.delete(eventId);
+          const slugKey = timetableCacheSlugKey(existing?.slug);
+          if (slugKey) store.delete(slugKey);
+          return store.get(eventId);
+        });
+      } catch (err) {
+        console.warn("timetable cache delete failed", err);
+      }
+    }
+
+    function applyTimetableCachePayload(payload) {
+      if (!payload?.tournamentsByDay || !Object.keys(payload.tournamentsByDay).length) {
+        return false;
+      }
+      tournamentsByDay = payload.tournamentsByDay;
+      dayTabItems = Array.isArray(payload.dayTabItems) ? payload.dayTabItems : [];
+      if (!dayTabItemsAreValid()) rebuildDayTabItemsFromTournaments();
+      sheetSchedule = Array.isArray(payload.sheetSchedule) ? payload.sheetSchedule : [];
+      sheetSnapshotCache = payload.sheetSnapshotCache || {};
+      lastLoadContext = payload.lastLoadContext || "";
+      selectedDay = resolveDayId(payload.selectedDay || dayTabItems[0]?.id || "");
+      if (!selectedDay || !tournamentsByDay[selectedDay]) {
+        selectedDay = dayTabItems[0]?.id || "";
+      }
+      if ($("hourHeight") && payload.hourHeight) {
+        $("hourHeight").value = String(payload.hourHeight);
+      }
+      overlapHighlight = payload.overlapHighlight || { mode: "none", bandId: null };
+      loadedFromSheet = true;
+      renderDayTabs();
+      renderBoard();
+      finishOverlapRestore({
+        selectedDay,
+        overlapHighlight: { ...overlapHighlight },
+        overlapBandKey: null
+      });
+      setExportSvgEnabled(true);
+      return true;
+    }
+
+    async function tryRestoreTimetableCache(eventId) {
+      const payload = await loadTimetableCache(eventId);
+      if (!payload) return null;
+      if (payload.sheetKey !== getTimetableCacheSheetKey()) return null;
+      if (!applyTimetableCachePayload(payload)) return null;
+      return payload;
+    }
+
+    function formatTimetableCacheSavedAt(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleString("ja-JP", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function loadEventRegistryFromStorage() {
+      try {
+        const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.events)) return null;
+        return {
+          version: 1,
+          events: parsed.events.map((event) => createEmptyEvent(event)),
+          selectedId: parsed.selectedId || null
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function fetchEventsJson() {
+      try {
+        const res = await fetch(`${EVENTS_JSON_PATH}?_=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data || !Array.isArray(data.events)) return null;
+        return {
+          version: 1,
+          events: data.events.map((event) => createEmptyEvent(event)),
+          selectedId: data.selectedId || null
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function mergeEventRegistries(base, overlay) {
+      const byId = new Map();
+      for (const event of base?.events || []) byId.set(event.id, createEmptyEvent(event));
+      for (const event of overlay?.events || []) byId.set(event.id, createEmptyEvent(event));
+      const events = [...byId.values()];
+      const selectedId =
+        (overlay?.selectedId && byId.has(overlay.selectedId) && overlay.selectedId) ||
+        (base?.selectedId && byId.has(base.selectedId) && base.selectedId) ||
+        events[0]?.id ||
+        null;
+      return { version: 1, events, selectedId };
+    }
+
+    function clearLoadedBoardState() {
+      tournamentsByDay = {};
+      dayTabItems = [];
+      sheetSnapshotCache = {};
+      sheetSchedule = [];
+      lastLoadContext = "";
+      selectedDay = null;
+      overlapDisplayBands = [];
+      lastOverlapBands = [];
+      overlapHighlight = { mode: "none", bandId: null };
+      const board = $("board");
+      if (board) {
+        board.className = "empty";
+        board.innerHTML = "シート設定を入力して「更新」を押すと、タイムテーブルが表示されます。";
+      }
+      setExportSvgEnabled(false);
+      renderDayTabs();
+      renderOverlapPanel();
+    }
+
+    function selectEventById(eventId, { clearBoard = true, persist = true } = {}) {
+      const event = eventRegistry.events.find((item) => item.id === eventId);
+      if (!event) return null;
+      eventRegistry.selectedId = event.id;
+      applyEventToForm(event);
+      if (persist) persistEventRegistry();
+      if (clearBoard) clearLoadedBoardState();
+      return event;
+    }
+
+    function saveCurrentEventFromForm({ announce = true } = {}) {
+      // 設定済みかつロック中は保存値を維持。未設定 or 編集中のみ入力欄を反映する。
+      const savedViewerBase = loadViewerBaseUrl();
+      const viewerBase =
+        viewerBaseUrlEditing || !savedViewerBase
+          ? saveViewerBaseUrl($("viewerBaseUrl")?.value || "", { announce: false })
+          : savedViewerBase;
+      if (!viewerBaseUrlEditing) syncViewerBaseUrlControls();
+      let selected = getSelectedEvent();
+      if (!selected) {
+        selected = createEmptyEvent(readEventFormValues());
+        if (!selected.slug) {
+          setStatus("スラッグを入力してください", true);
+          $("eventSlug")?.focus();
+          return null;
+        }
+        eventRegistry.events.push(selected);
+        eventRegistry.selectedId = selected.id;
+      } else {
+        syncSelectedEventFromForm();
+        if (!selected.slug) {
+          setStatus("スラッグを入力してください", true);
+          $("eventSlug")?.focus();
+          return null;
+        }
+        const dup = eventRegistry.events.find(
+          (event) => event.id !== selected.id && event.slug === selected.slug
+        );
+        if (dup) {
+          setStatus(`スラッグ「${selected.slug}」は別の大会で使われています`, true);
+          return null;
+        }
+      }
+      applyEventToForm(selected);
+      applyViewerBaseUrlToForm();
+      renderEventList();
+      persistEventRegistry();
+      if (announce) {
+        const viewUrl = buildEventViewUrl(selected);
+        setStatus(
+          viewerBase
+            ? `設定を保存しました（閲覧: ${viewUrl}）`
+            : `大会「${selected.name}」を保存しました（閲覧: ${viewUrl || `?event=${selected.slug}`}）`
+        );
+      }
+      return selected;
+    }
+
+    function deleteEventById(eventId) {
+      const target = eventRegistry.events.find((event) => event.id === eventId);
+      if (!target) {
+        setStatus("削除する大会がありません", true);
+        return;
+      }
+      if (!confirm(`大会「${target.name || target.slug}」を削除しますか？`)) return;
+      eventRegistry.events = eventRegistry.events.filter((event) => event.id !== target.id);
+      if (eventRegistry.selectedId === target.id) {
+        eventRegistry.selectedId = eventRegistry.events[0]?.id || null;
+        applyEventToForm(null);
+        clearLoadedBoardState();
+      }
+      persistEventRegistry();
+      deleteTimetableCache(target.id);
+      renderEventList();
+      const route = parseEditorHash();
+      if (route.view === "event" && route.eventId === target.id) {
+        setEditorHash("list");
+      }
+      setStatus(`大会「${target.name || target.slug}」を削除しました`);
+    }
+
+    function deleteSelectedEvent() {
+      const selected = getSelectedEvent();
+      if (!selected) {
+        setStatus("削除する大会がありません", true);
+        return;
+      }
+      deleteEventById(selected.id);
+    }
+
+    function buildEventsJsonText() {
+      syncSelectedEventFromForm();
+      return JSON.stringify(
+        {
+          version: 1,
+          selectedId: eventRegistry.selectedId,
+          events: eventRegistry.events.map((event) => ({
+            id: event.id,
+            name: event.name,
+            slug: event.slug,
+            sheetUrl: event.sheetUrl,
+            sheetStart: event.sheetStart,
+            sheetEnd: event.sheetEnd
+          }))
+        },
+        null,
+        2
+      );
+    }
+
+    async function initEventRegistry() {
+      const fromFile = await fetchEventsJson();
+      const fromStorage = loadEventRegistryFromStorage();
+      eventRegistry = mergeEventRegistries(fromFile, fromStorage);
+      if (!eventRegistry.selectedId && eventRegistry.events.length) {
+        eventRegistry.selectedId = eventRegistry.events[0].id;
+      }
+      persistEventRegistry();
+      renderEventList();
+      if (!location.hash || location.hash === "#") {
+        location.hash = "#/";
+      } else {
+        await applyEditorRoute({ skipHashWrite: true });
+      }
+    }
+
+    function setupEventControls() {
+      applyViewerBaseUrlToForm();
+      $("eventCreateBtn")?.addEventListener("click", createNewEventAndOpen);
+      $("backToEventListBtn")?.addEventListener("click", backToEventList);
+      $("eventSaveBtn")?.addEventListener("click", () => saveCurrentEventFromForm());
+      $("viewerBaseUrlEditBtn")?.addEventListener("click", beginViewerBaseUrlEdit);
+      $("viewerBaseUrlCommitBtn")?.addEventListener("click", commitViewerBaseUrlEdit);
+      $("viewerBaseUrlCancelBtn")?.addEventListener("click", cancelViewerBaseUrlEdit);
+      $("viewerBaseUrl")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          if (viewerBaseUrlEditing || !loadViewerBaseUrl()) commitViewerBaseUrlEdit();
+        } else if (event.key === "Escape" && viewerBaseUrlEditing) {
+          event.preventDefault();
+          cancelViewerBaseUrlEdit();
+        }
+      });
+      $("eventCopyViewUrlBtn")?.addEventListener("click", () => {
+        copySelectedEventViewUrl();
+      });
+      $("eventDeleteBtn")?.addEventListener("click", deleteSelectedEvent);
+      $("eventName")?.addEventListener("change", () => {
+        const slugEl = $("eventSlug");
+        if (slugEl && !slugEl.value.trim()) {
+          slugEl.value = normalizeEventSlug($("eventName").value);
+        }
+        updateEventViewUrlHint();
+      });
+      $("eventSlug")?.addEventListener("input", () => updateEventViewUrlHint());
+      $("eventSlug")?.addEventListener("change", () => updateEventViewUrlHint());
+      window.addEventListener("hashchange", () => {
+        applyEditorRoute({ skipHashWrite: true }).catch((err) => {
+          console.warn(err);
+        });
+      });
+    }
 
     function sanitizeViewerZipFileName(raw) {
       let name = String(raw || "").trim();
@@ -1761,12 +3241,7 @@
     }
 
     function getLegacyPublishedPath(slug) {
-      const normalized = String(slug || "")
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+      const normalized = normalizeEventSlug(slug);
       return normalized ? `published/${normalized}.json` : PUBLISHED_JSON_PATH;
     }
 
@@ -2150,6 +3625,9 @@
         const ts = Date.parse(payload.publishedAt);
         if (!Number.isNaN(ts)) compact.t = ts;
       }
+      const eventSlug = normalizeEventSlug(payload.eventId || payload.eventSlug || "");
+      if (eventSlug) compact.e = intern(eventSlug);
+      if (payload.eventName) compact.n = intern(payload.eventName);
       const dayEntries = Object.entries(payload.tournamentsByDay || {});
       if (dayEntries.length) {
         compact.s = dayEntries.map(([day, list]) => [
@@ -2177,7 +3655,8 @@
       return {
         version: payload.v === 5 ? 5 : 4,
         mode: "snapshot-live",
-        eventId: payload.eventId || payload.e || "",
+        eventId: readDict(payload.e) || payload.eventId || "",
+        eventName: readDict(payload.n) || payload.eventName || "",
         publishedAt: payload.t ? new Date(payload.t).toISOString() : "",
         sheetUrl: payload.i
           ? `https://docs.google.com/spreadsheets/d/${payload.i}/edit`
@@ -2251,10 +3730,13 @@
 
     function buildPublishConfig() {
       const viewState = captureViewState();
+      const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
       return {
         version: 5,
         mode: "snapshot-live",
         publishedAt: new Date().toISOString(),
+        eventId: event?.slug || "",
+        eventName: event?.name || "",
         sheetUrl: $("sheetUrl").value.trim(),
         sheetStart: $("sheetStart").value.trim(),
         sheetEnd: $("sheetEnd").value.trim(),
@@ -2326,8 +3808,11 @@
       });
     }
 
-    function getViewerBuildStamp() {
-      const headHtml = document.head?.innerHTML || "";
+    function getViewerBuildStamp(html) {
+      const headHtml =
+        html != null
+          ? String(html || "").split("</head>", 1)[0]
+          : document.head?.innerHTML || "";
       const match = headHtml.match(/<!--viewer-build:([^>]+)-->/);
       return match ? match[1] : "";
     }
@@ -2335,9 +3820,12 @@
     function updateViewerBanner(decoded, usedSnapshot) {
       const publishedLabel = formatPublishedAt(decoded?.publishedAt);
       const mainParts = ["\u95b2\u89a7\u30e2\u30fc\u30c9"];
+      if (decoded?.eventName) mainParts.unshift(decoded.eventName);
+      else if (decoded?.eventId) mainParts.unshift(decoded.eventId);
       if (!usedSnapshot && hasPublishSheetConfig(decoded)) mainParts.push("\u30b7\u30fc\u30c8\u9023\u52d5");
       const mainHtml = `<span class="viewer-banner-main">${escapeHtml(mainParts.join(" / "))}</span>`;
       const subParts = [];
+      if (decoded?.eventId) subParts.push(`event=${decoded.eventId}`);
       if (publishedLabel) subParts.push(`\u516c\u958b\u65e5\u6642 ${publishedLabel}`);
       const buildStamp = getViewerBuildStamp();
       if (buildStamp) subParts.push(`build ${buildStamp}`);
@@ -2346,17 +3834,78 @@
         ? `<span class="viewer-banner-sub">${escapeHtml(subParts.join(" / "))}</span>`
         : "";
       $("viewerBannerText").innerHTML = mainHtml + subHtml;
-      $("pageTitle").textContent = "\u30c8\u30fc\u30ca\u30e1\u30f3\u30c8 \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09";
-      document.title = "\u30c8\u30fc\u30ca\u30e1\u30f3\u30c8 \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09";
+      const titleName = decoded?.eventName || "\u30c8\u30fc\u30ca\u30e1\u30f3\u30c8";
+      $("pageTitle").textContent = `${titleName} \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09`;
+      document.title = `${titleName} \u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\uff08\u95b2\u89a7\uff09`;
 
       const refreshBtn = $("viewerRefreshBtn");
       if (refreshBtn) {
-        const showRefresh = hasPublishSheetConfig(decoded);
-        refreshBtn.hidden = !showRefresh;
+        refreshBtn.hidden = false;
       }
     }
 
+    function applyViewerSnapshotFromCache(cache) {
+      const decoded = timetableCacheToViewerPayload(cache);
+      if (!decoded || !hasPublishSnapshot(decoded)) return false;
+      viewerPublishConfig = decoded;
+      viewerAppliedSavedAt = cache.savedAt || decoded.publishedAt || "";
+      applyPublishPayload(decoded);
+      if (!dayTabItems.length) return false;
+      renderViewerFromDecoded(decoded);
+      updateViewerBanner(decoded, true);
+      return true;
+    }
+
+    async function reloadViewerFromAdminCache({ announce = false } = {}) {
+      const slug = getViewerEventSlug();
+      if (!slug) return false;
+      const cache = await loadTimetableCacheForViewerSlug(slug);
+      if (!cache) return false;
+      if (cache.savedAt && cache.savedAt === viewerAppliedSavedAt) return false;
+      if (!applyViewerSnapshotFromCache(cache)) return false;
+      if (announce) {
+        const when = formatTimetableCacheSavedAt(cache.savedAt);
+        setStatus(
+          when
+            ? `管理画面の最新タイムテーブルを反映しました（${when}）`
+            : "管理画面の最新タイムテーブルを反映しました"
+        );
+      }
+      return true;
+    }
+
+    function setupViewerLiveSync() {
+      const slug = getViewerEventSlug();
+      if (!slug) return;
+      try {
+        viewerSyncChannel = new BroadcastChannel(TIMETABLE_SYNC_CHANNEL);
+        viewerSyncChannel.onmessage = (event) => {
+          if (event.data?.type !== "timetable-updated") return;
+          if (normalizeEventSlug(event.data.slug) !== slug) return;
+          reloadViewerFromAdminCache({ announce: true }).catch(() => {});
+        };
+      } catch (_) {}
+      window.addEventListener("storage", (event) => {
+        if (event.key !== TIMETABLE_SYNC_PING_KEY || !event.newValue) return;
+        try {
+          const ping = JSON.parse(event.newValue);
+          if (normalizeEventSlug(ping.slug) !== slug) return;
+          reloadViewerFromAdminCache({ announce: true }).catch(() => {});
+        } catch (_) {}
+      });
+      const checkLatest = () => {
+        reloadViewerFromAdminCache({ announce: false }).catch(() => {});
+      };
+      window.addEventListener("focus", checkLatest);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") checkLatest();
+      });
+      setInterval(checkLatest, 2500);
+    }
+
     async function refreshViewerFromSheet() {
+      const fromAdmin = await reloadViewerFromAdminCache({ announce: true });
+      if (fromAdmin) return;
       if (!viewerPublishConfig?.sheetUrl) return;
       setStatus("\u66f4\u65b0\u4e2d...");
       await loadViewerFromLiveConfig(viewerPublishConfig);
@@ -2569,12 +4118,6 @@
       return validateViewerDeployIndexHtml(finalizeViewerDeployIndexHtml(prepared));
     }
 
-    function getViewerBuildStamp(html) {
-      const headHtml = String(html || "").split("</head>", 1)[0];
-      const match = headHtml.match(/<!--viewer-build:([^>]+)-->/);
-      return match ? match[1] : "";
-    }
-
     function getViewerMainScriptOpenMatch(html) {
       const afterHead = getViewerHtmlAfterHead(html);
       const match = afterHead.match(/<script>\s*\n\s*const APP_MODE/);
@@ -2672,11 +4215,25 @@
       return buildViewerDeployIndexHtml();
     }
 
-    function buildPublishedZipEntries(jsonText) {
-      return [{
-        name: PUBLISHED_JSON_PATH,
-        data: new TextEncoder().encode(jsonText)
-      }];
+    function buildPublishedZipEntries(jsonText, publishedPath) {
+      const path = publishedPath || PUBLISHED_JSON_PATH;
+      const entries = [
+        {
+          name: path,
+          data: new TextEncoder().encode(jsonText)
+        },
+        {
+          name: EVENTS_JSON_PATH,
+          data: new TextEncoder().encode(buildEventsJsonText())
+        }
+      ];
+      if (path !== PUBLISHED_JSON_PATH) {
+        entries.push({
+          name: PUBLISHED_JSON_PATH,
+          data: new TextEncoder().encode(jsonText)
+        });
+      }
+      return entries;
     }
 
     const ZIP_CRC32_TABLE = (() => {
@@ -2784,13 +4341,13 @@
       );
     }
 
-    async function buildViewerDeployZip(jsonText) {
+    async function buildViewerDeployZip(jsonText, publishedPath) {
       const indexHtml = await buildViewerDeployIndexHtml();
       const [viewHtml, netlifyToml] = await Promise.all([
         fetchViewerDeployText("view.html"),
         fetchViewerDeployText("netlify.toml")
       ]);
-      const publishedEntries = buildPublishedZipEntries(jsonText);
+      const publishedEntries = buildPublishedZipEntries(jsonText, publishedPath);
       return {
         blob: createZipBlob([
           { name: "index.html", data: new TextEncoder().encode(indexHtml) },
@@ -2814,19 +4371,29 @@
       URL.revokeObjectURL(url);
     }
 
-    function showPublishModal({ publishedPath, zipFileName, buildStamp }) {
+    function showPublishModal({ publishedPath, zipFileName, buildStamp, eventSlug }) {
       const modal = $("publishModal");
+      const resultWrap = $("publishResultUrlWrap");
+      if (resultWrap) resultWrap.hidden = true;
+      const deployBlock = $("publishDeployBlock");
+      const updateBlock = $("publishUpdateBlock");
+      if (deployBlock) deployBlock.hidden = false;
+      if (updateBlock) updateBlock.hidden = false;
+      const eventLine = eventSlug
+        ? `<br>\u30fb\u95b2\u89a7URL: <code>?event=${escapeHtml(eventSlug)}</code>`
+        : "";
       $("publishWorkflowSteps").innerHTML = `
-        <li><strong>\u7ba1\u7406\u753b\u9762</strong>\uff08<a href="${escapeHtml(EDITOR_SITE_ORIGIN)}" target="_blank" rel="noopener noreferrer">Surge</a>\uff09<br>\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f</li>
+        <li><strong>\u7ba1\u7406\u753b\u9762</strong>\uff08<a href="${escapeHtml(EDITOR_SITE_ORIGIN)}" target="_blank" rel="noopener noreferrer">Surge</a>\uff09<br>\u5927\u4f1a\u3092\u9078\u3073\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f</li>
         <li>\u300c\u751f\u6210\u300d\u3092\u30af\u30ea\u30c3\u30af<br>\u95b2\u89a7\u7528\u5c02\u7528\u306e Zip \u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9<br><span class="publish-steps-note">\u203b \u7ba1\u7406\u753b\u9762\u306f\u542b\u307e\u308c\u307e\u305b\u3093</span></li>
         <li>Zip \u3092 <a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a> \u306b\u30c7\u30d7\u30ed\u30a4</li>
-        <li>\u95b2\u89a7\u8005\u304c\u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\u3092\u898b\u308b</li>
+        <li>\u95b2\u89a7\u8005\u304c <code>?event=</code> \u3067\u30bf\u30a4\u30e0\u30c6\u30fc\u30d6\u30eb\u3092\u898b\u308b</li>
       `;
       $("publishSteps").innerHTML = `
         <li>Zip \u306f<strong>\u95b2\u89a7\u7528\u306e\u307f</strong>\uff08\u7ba1\u7406\u753b\u9762\u306f\u542b\u307f\u307e\u305b\u3093\uff09<br>
         <code>${escapeHtml(zipFileName)}</code><br>
         \u30fb\u6700\u65b0\u306e\u95b2\u89a7\u7528\u30a2\u30d7\u30ea<br>
-        \u30fb<code>${escapeHtml(publishedPath || "")}</code></li>
+        \u30fb<code>${escapeHtml(publishedPath || "")}</code>
+        \u30fb<code>events.json</code>${eventLine}</li>
         <li><a href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify</a> \u306e Deploy manually \u306b<br>Zip \u3092\u30c9\u30e9\u30c3\u30b0\uff06\u30c9\u30ed\u30c3\u30d7<br><span class="publish-steps-note">\u203b Zip \u306f\u81ea\u52d5\u3067\u5c55\u958b\u3055\u308c\u307e\u3059</span></li>
         <li>\u30c7\u30d7\u30ed\u30a4\u5b8c\u4e86\u5f8c\u3001\u95b2\u89a7\u7528\u30b5\u30a4\u30c8\u3067\u516c\u958b\u3055\u308c\u307e\u3059</li>
       `;
@@ -2866,18 +4433,51 @@
     }
 
     async function loadPublishedJsonPayload(legacySlug) {
-      const path = legacySlug ? getLegacyPublishedPath(legacySlug) : PUBLISHED_JSON_PATH;
-      const res = await fetch(`${path}?_=${Date.now()}`, { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error(
-          `\u516c\u958b\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093\uFF08${path}\uFF09\u3002\u7de8\u96c6\u753b\u9762\u304b\u3089\u518d\u516c\u958b\u3057\u3066\u304f\u3060\u3055\u3044\u3002`
-        );
+      const slug = normalizeEventSlug(legacySlug);
+      if (slug) {
+        const cached = await loadTimetableCacheForViewerSlug(slug);
+        const fromCache = timetableCacheToViewerPayload(cached);
+        if (fromCache) return fromCache;
       }
-      const raw = await res.json();
-      if (raw && (raw.v === 4 || raw.v === 5)) {
-        return expandPublishPayload(raw);
+
+      const candidates = [];
+      if (slug) candidates.push(getLegacyPublishedPath(slug));
+      if (!slug) candidates.push(PUBLISHED_JSON_PATH);
+      let lastError = null;
+      for (const path of [...new Set(candidates)]) {
+        try {
+          const res = await fetch(`${path}?_=${Date.now()}`, { cache: "no-store" });
+          if (!res.ok) {
+            lastError = new Error(
+              `\u516c\u958b\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093\uFF08${path}\uFF09\u3002\u7ba1\u7406\u753b\u9762\u3067\u300c\u516c\u958b\u300d\u3057\u3066\u304b\u3089\u518d\u5ea6\u958b\u3044\u3066\u304f\u3060\u3055\u3044\u3002`
+            );
+            continue;
+          }
+          const raw = await res.json();
+          const decoded =
+            raw && (raw.v === 4 || raw.v === 5) ? expandPublishPayload(raw) : raw;
+          if (slug) {
+            const payloadSlug = normalizeEventSlug(decoded?.eventId || decoded?.eventSlug || "");
+            if (payloadSlug && payloadSlug !== slug) {
+              lastError = new Error(
+                `公開データが大会「${slug}」と一致しません。管理画面で「公開」し直してください。`
+              );
+              continue;
+            }
+          }
+          return decoded;
+        } catch (err) {
+          lastError = err;
+        }
       }
-      return raw;
+      throw (
+        lastError ||
+        new Error(
+          slug
+            ? `大会「${slug}」の閲覧データがありません。管理画面でシートを「公開」してから開いてください。`
+            : "公開データを読み込めませんでした。"
+        )
+      );
     }
 
     async function generateViewerUrl() {
@@ -2910,8 +4510,15 @@
         return;
       }
 
+      const event = saveCurrentEventFromForm({ announce: false });
+      if (!event?.slug) {
+        setStatus("大会スラッグを入力して保存してください", true);
+        $("eventSlug")?.focus();
+        return;
+      }
+
       const zipNameEl = $("viewerZipName");
-      const rawZipName = getViewerZipNameInput();
+      const rawZipName = getViewerZipNameInput() || `${event.slug}.zip`;
       const zipFileName = sanitizeViewerZipFileName(rawZipName);
       if (!zipFileName) {
         setStatus("Zip \u30d5\u30a1\u30a4\u30eb\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", true);
@@ -2923,14 +4530,14 @@
       try {
         const config = buildPublishConfig();
         const jsonText = buildPublishedJsonText(config);
-        const publishedPath = PUBLISHED_JSON_PATH;
-        const { blob: zipBlob, buildStamp } = await buildViewerDeployZip(jsonText);
+        const publishedPath = getPublishedPathForEvent(event);
+        const { blob: zipBlob, buildStamp } = await buildViewerDeployZip(jsonText, publishedPath);
         if (zipNameEl) zipNameEl.value = zipFileName;
         downloadViewerDeployZip(zipBlob, zipFileName);
 
-        showPublishModal({ publishedPath, zipFileName, buildStamp });
+        showPublishModal({ publishedPath, zipFileName, buildStamp, eventSlug: event.slug });
         setStatus(
-          `${zipFileName} \u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u307e\u3057\u305f\u3002Netlify \u306b\u30c9\u30e9\u30c3\u30b0\uff06\u30c9\u30ed\u30c3\u30d7\u3057\u3066\u30c7\u30d7\u30ed\u30a4\u3057\u3066\u304f\u3060\u3055\u3044`
+          `${zipFileName} をダウンロードしました（${publishedPath} / ?event=${event.slug}）。Netlify にデプロイしてください`
         );
       } catch (e) {
         setStatus(`\u95b2\u89a7\u7528 Zip \u306e\u751f\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f: ${e.message || e}`, true);
@@ -2939,9 +4546,41 @@
       }
     }
 
+    function hideViewerEventPicker() {
+      const picker = $("viewerEventPicker");
+      if (!picker) return;
+      picker.hidden = true;
+      picker.classList.remove("visible");
+    }
+
+    function showViewerEventPicker(events) {
+      const picker = $("viewerEventPicker");
+      const list = $("viewerEventList");
+      const boardWrap = document.querySelector(".board-wrap");
+      if (!picker || !list) return;
+      list.innerHTML = "";
+      for (const event of events) {
+        if (!event.slug) continue;
+        const link = document.createElement("a");
+        link.href = `?event=${encodeURIComponent(event.slug)}`;
+        link.textContent = event.name || event.slug;
+        list.appendChild(link);
+      }
+      if (!list.children.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "公開済みの大会がありません。管理画面で生成してください。";
+        list.appendChild(empty);
+      }
+      picker.hidden = false;
+      picker.classList.add("visible");
+      if (boardWrap) boardWrap.style.display = "none";
+      $("overlapPanel")?.classList.remove("visible");
+      setStatus("");
+    }
+
     async function loadViewerData() {
       const params = new URLSearchParams(location.search);
-      const pValue = params.get("p") || params.get("e") || params.get("event");
+      const pValue = params.get("p") || params.get("event") || params.get("e");
       const cValue = params.get("c") || params.get("cfg") || params.get("config");
 
       try {
@@ -2950,13 +4589,30 @@
           decoded = await decodePublishPayload(pValue);
         } else if (cValue) {
           decoded = await decodePublishPayload(cValue);
+        } else if (!pValue) {
+          const registry = await fetchEventsJson();
+          const events = (registry?.events || []).filter((event) => event.slug);
+          if (events.length === 1) {
+            location.replace(`?event=${encodeURIComponent(events[0].slug)}`);
+            return;
+          }
+          if (events.length > 1) {
+            showViewerEventPicker(events);
+            return;
+          }
+          setStatus("読み込み中...");
+          decoded = await loadPublishedJsonPayload("");
         } else {
-          setStatus("\u8aad\u307f\u8fbc\u307f\u4e2d...");
+          setStatus("読み込み中...");
           decoded = await loadPublishedJsonPayload(pValue || "");
         }
 
+        hideViewerEventPicker();
+        const boardWrap = document.querySelector(".board-wrap");
+        if (boardWrap) boardWrap.style.display = "";
+
         if (!hasPublishSnapshot(decoded) && !hasPublishSheetConfig(decoded)) {
-          throw new Error("\u95b2\u89a7\u7528URL\u306e\u8a2d\u5b9a\u304c\u4e0d\u6b63\u3067\u3059\u3002\u7de8\u96c6\u753b\u9762\u304b\u3089\u518d\u751f\u6210\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+          throw new Error("閲覧用URLの設定が不正です。編集画面から再生成してください。");
         }
 
         viewerPublishConfig = decoded;
@@ -2964,16 +4620,17 @@
         if (hasPublishSnapshot(decoded)) {
           applyPublishPayload(decoded);
           if (!dayTabItems.length) {
-            throw new Error("\u516c\u958b\u30c7\u30fc\u30bf\u304c\u7a7a\u3067\u3059\u3002");
+            throw new Error("公開データが空です。");
           }
+          viewerAppliedSavedAt = decoded.publishedAt || "";
           renderViewerFromDecoded(decoded);
           updateViewerBanner(decoded, true);
           setStatus("");
         } else {
-          setStatus("\u8aad\u307f\u8fbc\u307f\u4e2d...");
+          setStatus("読み込み中...");
           await loadViewerFromLiveConfig(decoded);
           if (!dayTabItems.length) {
-            throw new Error("\u516c\u958b\u30c7\u30fc\u30bf\u304c\u7a7a\u3067\u3059\u3002");
+            throw new Error("公開データが空です。");
           }
           renderViewerFromDecoded(decoded);
           updateViewerBanner(decoded, false);
@@ -3033,6 +4690,7 @@
       });
       $("exportSvgBtn")?.addEventListener("click", exportTimetableSvg);
       setupSharedBoardControls();
+      setupViewerLiveSync();
       loadViewerData();
     }
 
@@ -3042,11 +4700,26 @@
         if (!el || !el.value.trim()) return;
         el.value = sanitizeViewerZipFileName(el.value);
       });
-      $("publishUrlBtn").addEventListener("click", generateViewerUrl);
+      $("openEventViewBtn")?.addEventListener("click", openSelectedEventView);
+      $("publishCopyViewUrlBtn")?.addEventListener("click", async () => {
+        const url = $("publishResultUrl")?.textContent?.trim();
+        if (!url) {
+          setStatus("コピーするURLがありません", true);
+          return;
+        }
+        try {
+          await copyTextToClipboard(url);
+          setStatus("閲覧URLをコピーしました");
+        } catch (err) {
+          setStatus(`コピーに失敗しました: ${err.message || err}`, true);
+        }
+      });
+      $("publishUrlBtn")?.addEventListener("click", generateViewerUrl);
       $("closePublishModalBtn").addEventListener("click", closePublishModal);
       $("publishModal").addEventListener("click", (event) => {
         if (event.target === $("publishModal")) closePublishModal();
       });
+      setPublishButtonState();
     }
 
     function normalizeDayLabel(value) {
@@ -7023,19 +8696,36 @@
     }
 
     function setPublishButtonState() {
+      const fullLoadBtn = $("fullLoadBtn");
       const refreshBtn = $("refreshBtn");
-      const publishBtn = $("publishUrlBtn");
+      const zipBtn = $("publishUrlBtn");
+      const openViewBtn = $("openEventViewBtn");
       const blocked = loadInProgress || exportInProgress;
-      if (refreshBtn) refreshBtn.disabled = blocked;
-      if (publishBtn) {
-        publishBtn.disabled = blocked;
-        publishBtn.classList.toggle("is-busy", exportInProgress);
-        publishBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
-        publishBtn.textContent = exportInProgress ? PUBLISH_BTN_BUSY_LABEL : PUBLISH_BTN_LABEL;
+      if (openViewBtn) openViewBtn.disabled = exportInProgress;
+      if (fullLoadBtn) {
+        fullLoadBtn.disabled = blocked;
+        const busy = loadInProgress && activeLoadMode === "full";
+        fullLoadBtn.classList.toggle("is-busy", busy);
+        fullLoadBtn.setAttribute("aria-busy", busy ? "true" : "false");
+        fullLoadBtn.textContent = busy ? FULL_LOAD_BTN_BUSY_LABEL : FULL_LOAD_BTN_LABEL;
+      }
+      if (refreshBtn) {
+        refreshBtn.disabled = blocked;
+        const busy = loadInProgress && activeLoadMode === "diff";
+        refreshBtn.classList.toggle("is-busy", busy);
+        refreshBtn.setAttribute("aria-busy", busy ? "true" : "false");
+        refreshBtn.textContent = busy ? DIFF_UPDATE_BTN_BUSY_LABEL : DIFF_UPDATE_BTN_LABEL;
+      }
+      if (zipBtn) {
+        zipBtn.disabled = blocked;
+        zipBtn.classList.toggle("is-busy", exportInProgress);
+        zipBtn.setAttribute("aria-busy", exportInProgress ? "true" : "false");
+        zipBtn.textContent = exportInProgress ? PUBLISH_BTN_BUSY_LABEL : PUBLISH_BTN_LABEL;
       }
     }
 
     function setRefreshBusy(busy) {
+      if (!busy) activeLoadMode = null;
       setPublishButtonState();
     }
 
@@ -7081,6 +8771,7 @@
           if (preserveState) finishOverlapRestore(savedState);
           setStatus("\u5909\u66f4\u306f\u3042\u308a\u307e\u305b\u3093\u3067\u3057\u305f");
           lastLoadContext = getLoadContextKey(url, "", "");
+          await persistTimetableCache();
           return true;
         }
 
@@ -7097,6 +8788,7 @@
         if (preserveState) finishOverlapRestore(savedState);
         lastLoadContext = getLoadContextKey(url, "", "");
         const total = Object.values(tournamentsByDay).reduce((a, t) => a + t.length, 0);
+        await persistTimetableCache();
         setStatus(
           isIncremental
             ? `\u66f4\u65b0\u5b8c\u4e86\uff08${result.changed ? "1\u4ef6\u5909\u66f4" : "\u5909\u66f4\u306a\u3057"}\u3001\u5408\u8a08 ${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
@@ -7262,7 +8954,8 @@
       return { changed: !contentUnchanged || count > 0, count };
     }
 
-    async function refreshTimetable() {
+    async function refreshTimetable(options = {}) {
+      const { mode = "auto" } = options;
       const url = $("sheetUrl").value.trim();
       if (!url) {
         setStatus("URL \u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", true);
@@ -7273,14 +8966,44 @@
       const savedState = captureViewState();
       const start = $("sheetStart").value.trim();
       const end = $("sheetEnd").value.trim();
-      const incremental = shouldUseIncrementalLoad(url, start, end);
-      const options = { preserveState: true, savedState, incremental };
+      const canIncremental = shouldUseIncrementalLoad(url, start, end);
+
+      let incremental = false;
+      if (mode === "diff") {
+        if (!canIncremental) {
+          setStatus(
+            "差分更新できる保存データがありません。先に「公開」で新規読み込みしてください。",
+            true
+          );
+          return;
+        }
+        incremental = true;
+        activeLoadMode = "diff";
+      } else if (mode === "full") {
+        incremental = false;
+        activeLoadMode = "full";
+      } else {
+        incremental = canIncremental;
+        activeLoadMode = incremental ? "diff" : "full";
+      }
+
+      const loadOptions = { preserveState: true, savedState, incremental };
 
       if (!start || !end) {
-        await loadSingleFromUrl(options);
+        await loadSingleFromUrl(loadOptions);
       } else {
-        await loadAll(options);
+        await loadAll(loadOptions);
       }
+    }
+
+    async function fullLoadTimetable() {
+      saveCurrentEventFromForm({ announce: false });
+      await refreshTimetable({ mode: "full" });
+    }
+
+    async function diffUpdateTimetable() {
+      saveCurrentEventFromForm({ announce: false });
+      await refreshTimetable({ mode: "diff" });
     }
 
     async function loadAll(options = {}) {
@@ -7482,6 +9205,7 @@
         const total = Object.values(tournamentsByDay).reduce((a, t) => a + t.length, 0);
         const loadedSheetCount = getLoadedSheetNameSet().size;
         lastLoadContext = getLoadContextKey(url, start, end);
+        await persistTimetableCache();
 
         if (failedSheets.length) {
           const preview = failedSheets.slice(0, 3).join("\u3001");
@@ -7522,10 +9246,22 @@
     }
 
     function setupControls() {
-      $("refreshBtn")?.addEventListener("click", refreshTimetable);
-      $("exportSvgBtn")?.addEventListener("click", exportTimetableSvg);
+      showEditorView("list");
+      $("fullLoadBtn")?.addEventListener("click", () => {
+        fullLoadTimetable();
+      });
+      $("refreshBtn")?.addEventListener("click", () => {
+        diffUpdateTimetable();
+      });
+      setupEventControls();
       setupPublishControls();
       setupSharedBoardControls();
+      initEventRegistry().catch((err) => {
+        console.warn(err);
+        setStatus("大会一覧の読み込みに失敗しました", true);
+        showEditorView("list");
+        renderEventList();
+      });
     }
 
     if (IS_VIEWER_MODE) {

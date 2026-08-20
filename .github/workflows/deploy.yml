@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "published/**"
+      - "events.json"
       - "index.html"
       - "viewer-deploy.js"
       - "view.html"
@@ -35,6 +36,9 @@ jobs:
       - name: Prepare viewer bundle
         run: |
           bash scripts/prepare-viewer-dist.sh dist-viewer
+          if [[ -f events.json ]]; then
+            cp events.json dist-viewer/
+          fi
           if compgen -G "published/*.json" > /dev/null; then
             mkdir -p dist-viewer/published
             cp published/*.json dist-viewer/published/

@@ -81,6 +81,9 @@ dst.write_text(html, encoding="utf-8")
 PY
 
 cp "$ROOT/view.html" "$ROOT/netlify.toml" "$ROOT/_redirects" "$ROOT/viewer-deploy.js" "$DIST/"
+if [[ -f "$ROOT/events.json" ]]; then
+  cp "$ROOT/events.json" "$DIST/"
+fi
 
 if [[ "${COPY_PUBLISHED:-}" == "1" ]] && compgen -G "$ROOT/published/*.json" > /dev/null; then
   mkdir -p "$DIST/published"

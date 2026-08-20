@@ -3,8 +3,6 @@ name: Deploy Editor to Surge
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "published/**"
   workflow_dispatch:
 
 concurrency:

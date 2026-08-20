@@ -14,15 +14,27 @@ echo "=== Build ${OUT} for Netlify ==="
 
 bash scripts/prepare-viewer-dist.sh "$DIST"
 
+mkdir -p "$DIST/published"
 if [[ -n "${PUBLISHED_JSON}" && -f "${PUBLISHED_JSON}" ]]; then
-  mkdir -p "$DIST/published"
   cp "${PUBLISHED_JSON}" "$DIST/published/timetable.json"
+  # Keep slug copy when input is already published/{slug}.json
+  base="$(basename "${PUBLISHED_JSON}")"
+  if [[ "$base" != "timetable.json" ]]; then
+    cp "${PUBLISHED_JSON}" "$DIST/published/${base}"
+  fi
   echo "Included published data: ${PUBLISHED_JSON}"
-else
-  echo "WARNING: No published/timetable.json included."
+fi
+if compgen -G "published/*.json" > /dev/null; then
+  cp published/*.json "$DIST/published/" 2>/dev/null || true
+fi
+if [[ -f events.json ]]; then
+  cp events.json "$DIST/"
+fi
+
+if [[ ! -f "$DIST/published/timetable.json" ]] && ! compgen -G "$DIST/published/*.json" > /dev/null; then
+  echo "WARNING: No published/*.json included."
   echo "  Copy your real timetable.json into published/ and re-run:"
   echo "  ./build-viewer-zip.sh published/timetable.json [output.zip]"
-  echo "  Or pass a path from your previous viewer.zip."
 fi
 
 rm -f "$OUT"
