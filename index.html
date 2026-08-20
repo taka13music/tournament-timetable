@@ -320,6 +320,13 @@
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
+      margin-top: 4px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .controls-detail-actions .btn-action {
+      min-width: 7.5rem;
     }
 
     .github-settings {
@@ -1849,13 +1856,6 @@
           <button type="button" id="openEventViewBtn" class="btn-primary">&#38322;&#35239;&#12434;&#38283;&#12367;</button>
         </div>
 
-        <div class="controls-detail-actions">
-          <button type="button" id="fullLoadBtn" class="btn-primary btn-action" title="シートからタイムテーブルを新規読み込み">&#20844;&#38283;</button>
-          <button type="button" id="refreshBtn" class="btn-accent btn-action" title="変更点だけ差分更新">&#26356;&#26032;</button>
-          <button type="button" id="saveSharedBtn" class="btn-primary btn-action" title="他の端末でも見られるようにサーバーへ保存">&#20445;&#23384;</button>
-          <span class="hint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#26356;&#26032;: &#22793;&#26356;&#20998;&#12398;&#12415; &#47; &#20445;&#23384;: &#20182;&#12398;&#31471;&#26411;&#12391;&#12418;&#35211;&#12425;&#12428;&#12427;</span>
-        </div>
-
         <details class="editor-settings-details" id="githubSaveDetails">
           <summary>&#20445;&#23384;&#20808;&#12398;&#35373;&#23450;&#65288;&#21021;&#22238;&#12398;&#12415;&#65289;</summary>
           <p class="hint" style="margin: 10px 0 8px;">GitHub Token&#65288;repo&#27161;&#38480;&#65289;&#12434;&#19968;&#24230;&#20837;&#21147;&#12377;&#12427;&#12392;&#12289;&#22823;&#20250;&#12487;&#12540;&#12479;&#12364;&#12469;&#12540;&#12496;&#12540;&#12395;&#20445;&#23384;&#12373;&#12428;&#12289;&#20182;&#12398;&#31471;&#26411;&#12391;&#12397;&#38322;&#35239;URL&#12364;&#38283;&#12369;&#12414;&#12377;&#12290;</p>
@@ -1917,6 +1917,13 @@
             <button type="button" id="publishUrlBtn" class="btn-secondary btn-action">Zip &#29983;&#25104;</button>
           </div>
         </details>
+
+        <div class="controls-detail-actions" id="eventLoadActions">
+          <button type="button" id="fullLoadBtn" class="btn-primary btn-action" title="シートからタイムテーブルを新規読み込み">&#20844;&#38283;</button>
+          <button type="button" id="refreshBtn" class="btn-accent btn-action" hidden title="変更点だけ差分更新">&#26356;&#26032;</button>
+          <button type="button" id="saveSharedBtn" class="btn-primary btn-action" title="他の端末でも見られるようにサーバーへ保存">&#20445;&#23384;</button>
+          <span class="hint" id="eventLoadHint" style="flex-basis: 100%; margin: 0;">&#20844;&#38283;: &#12471;&#12540;&#12488;&#12363;&#12425;&#26032;&#35215;&#35501;&#12415;&#36796;&#12415; &#47; &#20445;&#23384;: &#20182;&#12398;&#31471;&#26411;&#12391;&#12418;&#35211;&#12425;&#12428;&#12427;</span>
+        </div>
       </div>
     </div>
 
@@ -2303,7 +2310,7 @@
           const board = $("board");
           if (board && board.classList.contains("empty")) {
             board.innerHTML =
-              "シート設定を入力して「更新」を押すと、タイムテーブルが表示されます。";
+              "シート設定を入力して「公開」を押すと、タイムテーブルが表示されます。";
           }
         }
         return;
@@ -2839,6 +2846,7 @@
         overlapBandKey: null
       });
       setExportSvgEnabled(true);
+      setPublishButtonState();
       return true;
     }
 
@@ -2914,17 +2922,19 @@
       sheetSchedule = [];
       lastLoadContext = "";
       selectedDay = null;
+      loadedFromSheet = false;
       overlapDisplayBands = [];
       lastOverlapBands = [];
       overlapHighlight = { mode: "none", bandId: null };
       const board = $("board");
       if (board) {
         board.className = "empty";
-        board.innerHTML = "シート設定を入力して「更新」を押すと、タイムテーブルが表示されます。";
+        board.innerHTML = "シート設定を入力して「公開」を押すと、タイムテーブルが表示されます。";
       }
       setExportSvgEnabled(false);
       renderDayTabs();
       renderOverlapPanel();
+      setPublishButtonState();
     }
 
     function selectEventById(eventId, { clearBoard = true, persist = true } = {}) {
@@ -3057,6 +3067,9 @@
       });
       $("eventName")?.addEventListener("change", () => {
         saveCurrentEventFromForm({ announce: false });
+      });
+      ["sheetUrl", "sheetStart", "sheetEnd"].forEach((id) => {
+        $(id)?.addEventListener("input", () => setPublishButtonState());
       });
       window.addEventListener("hashchange", () => {
         applyEditorRoute({ skipHashWrite: true }).catch((err) => {
@@ -4690,6 +4703,7 @@
     function decodeSheetName(value) {
       return String(value || "")
         .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+        .replace(/\\x([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
         .replace(/\\n/g, "\n")
         .replace(/\\r/g, "\r")
         .replace(/\\t/g, "\t")
@@ -4741,18 +4755,44 @@
       });
     }
 
-    async function fetchWorksheetNamesFromHtmlview(spreadsheetId) {
-      const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/htmlview?gid=0`;
-      const { res, text } = await fetchTextWithRetry(url);
-      if (!res.ok) throw new Error(`htmlview fetch failed (${res.status})`);
-      const sheets = parseSheetListFromHtmlview(text);
-      if (!sheets.length) throw new Error("sheet tabs not found in htmlview");
-      return sheets;
+    function htmlviewLooksLikeLoginWall(html) {
+      const text = String(html || "");
+      if (/items\.push\(/.test(text)) return false;
+      return /accounts\.google\.com|ServiceLogin|sign in/i.test(text);
     }
 
-    async function fetchSheetGidsFromHtmlview(spreadsheetId) {
+    async function fetchWorksheetNamesFromHtmlview(spreadsheetId, preferredGid = null) {
+      const gids = [];
+      const gid = preferredGid != null && String(preferredGid).trim() !== "" ? String(preferredGid) : "";
+      if (gid) gids.push(gid);
+      if (!gids.includes("0")) gids.push("0");
+
+      let lastErr = null;
+      for (const tryGid of gids) {
+        try {
+          const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/htmlview?gid=${encodeURIComponent(tryGid)}`;
+          const { res, text } = await fetchTextWithRetry(url);
+          if (!res.ok) {
+            lastErr = new Error(`htmlview fetch failed (${res.status})`);
+            continue;
+          }
+          if (htmlviewLooksLikeLoginWall(text)) {
+            lastErr = new Error("htmlview login wall");
+            continue;
+          }
+          const sheets = parseSheetListFromHtmlview(text);
+          if (sheets.length) return sheets;
+          lastErr = new Error("sheet tabs not found in htmlview");
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr || new Error("sheet tabs not found in htmlview");
+    }
+
+    async function fetchSheetGidsFromHtmlview(spreadsheetId, preferredGid = null) {
       try {
-        const sheets = await fetchWorksheetNamesFromHtmlview(spreadsheetId);
+        const sheets = await fetchWorksheetNamesFromHtmlview(spreadsheetId, preferredGid);
         return new Map(sheets.map((sheet) => [sheet.name, sheet.gid]));
       } catch {
         return new Map();
@@ -4786,16 +4826,19 @@
       return sheets;
     }
 
-    async function fetchAllSheetNames(spreadsheetId) {
+    async function fetchAllSheetNames(spreadsheetId, preferredGid = null) {
       try {
-        return await fetchWorksheetNamesFromHtmlview(spreadsheetId);
-      } catch {
+        return await fetchWorksheetNamesFromHtmlview(spreadsheetId, preferredGid);
+      } catch (htmlviewErr) {
+        console.warn("htmlview sheet list", htmlviewErr);
         try {
           return await fetchWorksheetNamesFromHtml(spreadsheetId);
-        } catch {
+        } catch (htmlErr) {
+          console.warn("edit html sheet list", htmlErr);
           try {
             return await fetchWorksheetNames(spreadsheetId);
-          } catch {
+          } catch (feedErr) {
+            console.warn("worksheet feed sheet list", feedErr);
             return [];
           }
         }
@@ -5063,7 +5106,7 @@
         throw new Error("\u30bf\u30d6\u540d\u306e\u958b\u59cb\u30fb\u7d42\u4e86\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044");
       }
 
-      const sheets = allSheets || (await fetchAllSheetNames(spreadsheetId));
+      const sheets = allSheets || (await fetchAllSheetNames(spreadsheetId, extractGidFromUrl(url)));
       const ranged = sheets.length ? sliceSheetNames(sheets, startName, endName) : null;
 
       if (ranged && ranged.length) {
@@ -5073,6 +5116,12 @@
           const gid = typeof sheet === "string" ? null : sheet.gid;
           return { id: name, label: name, sheetName: name, gid };
         });
+      }
+
+      if (!sheets.length) {
+        throw new Error(
+          "タブ一覧を取得できませんでした。スプレッドシートを「リンクを知っている全員が閲覧可」にして、もう一度「公開」してください。"
+        );
       }
 
       const fallback = buildScheduleFallback(sheets, startName, endName);
@@ -8491,6 +8540,7 @@
       board.className = "empty";
       board.innerHTML = "";
       setExportSvgEnabled(false);
+      setPublishButtonState();
       setStatus("");
     }
 
@@ -8561,26 +8611,50 @@
       return getLoadedSheetNameSet().has(sheetName);
     }
 
+    function hasPublishedTimetable() {
+      if (!loadedFromSheet || !Object.keys(tournamentsByDay).length) return false;
+      const url = $("sheetUrl")?.value.trim() || "";
+      const start = $("sheetStart")?.value.trim() || "";
+      const end = $("sheetEnd")?.value.trim() || "";
+      if (!url) return false;
+      if (!lastLoadContext) return true;
+      return lastLoadContext === getLoadContextKey(url, start, end);
+    }
+
+    function shouldShowUpdateButton() {
+      if (loadInProgress && activeLoadMode === "full") return false;
+      return hasPublishedTimetable();
+    }
+
     function setPublishButtonState() {
       const fullLoadBtn = $("fullLoadBtn");
       const refreshBtn = $("refreshBtn");
       const zipBtn = $("publishUrlBtn");
       const openViewBtn = $("openEventViewBtn");
       const blocked = loadInProgress || exportInProgress;
+      const showUpdate = shouldShowUpdateButton();
       if (openViewBtn) openViewBtn.disabled = exportInProgress;
       if (fullLoadBtn) {
-        fullLoadBtn.disabled = blocked;
+        fullLoadBtn.hidden = showUpdate;
+        fullLoadBtn.disabled = blocked || showUpdate;
         const busy = loadInProgress && activeLoadMode === "full";
         fullLoadBtn.classList.toggle("is-busy", busy);
         fullLoadBtn.setAttribute("aria-busy", busy ? "true" : "false");
         fullLoadBtn.textContent = busy ? FULL_LOAD_BTN_BUSY_LABEL : FULL_LOAD_BTN_LABEL;
       }
       if (refreshBtn) {
-        refreshBtn.disabled = blocked;
+        refreshBtn.hidden = !showUpdate;
+        refreshBtn.disabled = blocked || !showUpdate;
         const busy = loadInProgress && activeLoadMode === "diff";
         refreshBtn.classList.toggle("is-busy", busy);
         refreshBtn.setAttribute("aria-busy", busy ? "true" : "false");
         refreshBtn.textContent = busy ? DIFF_UPDATE_BTN_BUSY_LABEL : DIFF_UPDATE_BTN_LABEL;
+      }
+      const hint = $("eventLoadHint");
+      if (hint) {
+        hint.textContent = showUpdate
+          ? "更新: 変更分のみ読み込み / 保存: 他の端末でも見られる"
+          : "公開: シートから新規読み込み / 保存: 他の端末でも見られる";
       }
       if (zipBtn) {
         zipBtn.disabled = blocked;
@@ -8765,6 +8839,14 @@
       return count;
     }
 
+    function gvizTextHasFestivalFee(gvizText) {
+      try {
+        return !!extractFestivalMetaFromGrid(parseGvizResponse(gvizText)).fee;
+      } catch {
+        return false;
+      }
+    }
+
     async function loadSheetItem(url, spreadsheetId, item, sheetIndex, revisionMap = null, options = {}) {
       const incremental = !!options.incremental;
       const revision = getSheetRevision(item, revisionMap);
@@ -8793,7 +8875,9 @@
         return { changed: false, count: 0 };
       }
 
-      const html = await fetchHtmlviewText(spreadsheetId, item.gid, item.sheetName);
+      const html = gvizTextHasFestivalFee(gvizText)
+        ? ""
+        : await fetchHtmlviewText(spreadsheetId, item.gid, item.sheetName);
       const markersHash = hashString(html || "");
       const grid = parseGvizResponse(gvizText);
       const htmlMeta = html ? parseHtmlviewMetadata(html) : {};
@@ -8878,6 +8962,13 @@
 
     async function diffUpdateTimetable() {
       saveCurrentEventFromForm({ announce: false });
+      const url = $("sheetUrl")?.value.trim() || "";
+      const start = $("sheetStart")?.value.trim() || "";
+      const end = $("sheetEnd")?.value.trim() || "";
+      if (!shouldUseIncrementalLoad(url, start, end)) {
+        await refreshTimetable({ mode: "full" });
+        return;
+      }
       await refreshTimetable({ mode: "diff" });
     }
 
@@ -8925,7 +9016,7 @@
           revisionMap = await fetchSheetRevisionMap(spreadsheetId);
         } else {
           const [allSheets, fetchedRevisionMap] = await Promise.all([
-            fetchAllSheetNames(spreadsheetId),
+            fetchAllSheetNames(spreadsheetId, extractGidFromUrl(url)),
             fetchSheetRevisionMap(spreadsheetId)
           ]);
           revisionMap = fetchedRevisionMap;
