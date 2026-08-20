@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache" />
+  <!-- late-color: v3 2026-08-20 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -2038,7 +2039,7 @@
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
     const TIMETABLE_CACHE_VERSION = 2;
-    const LATE_COLOR_LOGIC_VERSION = 2;
+    const LATE_COLOR_LOGIC_VERSION = 3;
     const TIMETABLE_SYNC_CHANNEL = "tournamentTimetableSync";
     const TIMETABLE_SYNC_PING_KEY = "tournamentTimetableSyncPing";
     let viewerAppliedSavedAt = "";
@@ -5098,6 +5099,12 @@
       return n >= 1 && n <= 50 ? n : null;
     }
 
+    function isValidLateCutoffLevel(value) {
+      if (value == null || value === "") return false;
+      const n = Number(value);
+      return Number.isInteger(n) && n >= 1 && n <= 50;
+    }
+
     function lateCutoffLevelFromTime(tournament, lateTime) {
       const lateMin = parseTimeToMinutes(lateTime);
       if (lateMin == null) return null;
@@ -5114,19 +5121,16 @@
     }
 
     function resolveLateYellowLevel(tournament, overlay = {}, markers = {}) {
-      const fromMarker = overlay.yellowLevel ?? markers.yellowLevel;
-      if (fromMarker != null && fromMarker !== "" && !Number.isNaN(Number(fromMarker))) {
-        return Number(fromMarker);
-      }
       const fromLateLv =
         parseLateLevelNumber(overlay.lateLevel) ??
         parseLateLevelNumber(tournament.lateLevel);
       if (fromLateLv != null) return fromLateLv;
+
       const fromTime = lateCutoffLevelFromTime(tournament, overlay.lateTime || tournament.lateTime);
       if (fromTime != null) return fromTime;
-      if (tournament.yellowLevel != null && tournament.yellowLevel !== "" && !Number.isNaN(Number(tournament.yellowLevel))) {
-        return Number(tournament.yellowLevel);
-      }
+
+      const fromMarker = overlay.yellowLevel ?? markers.yellowLevel ?? tournament.yellowLevel;
+      if (isValidLateCutoffLevel(fromMarker)) return Number(fromMarker);
       return null;
     }
 
@@ -7486,13 +7490,13 @@
 
     function getBlockClass(block, tournament) {
       if (block.type === "break") return "break";
-      if (block.isLate === true) return "level-late";
-      if (block.isLate === false) return "level";
-      if (tournament?.allLevelsLate) return "level-late";
-      const yellow = Number(String(tournament?.yellowLevel ?? "").trim());
-      if (!Number.isNaN(yellow) && block.levelNum != null && block.levelNum > yellow) {
-        return "level-late";
+      const cutoff =
+        parseLateLevelNumber(tournament?.lateLevel) ??
+        (isValidLateCutoffLevel(tournament?.yellowLevel) ? Number(tournament.yellowLevel) : null);
+      if (cutoff != null && block.levelNum != null) {
+        return block.levelNum > cutoff ? "level-late" : "level";
       }
+      if (block.isLate === true) return "level-late";
       return "level";
     }
 
@@ -7785,6 +7789,7 @@
         const body = document.createElement("div");
         body.className = "tournament-body";
 
+        applyLateRegistrationStyles(t);
         prepareBlocks(t.blocks, t).forEach((b) => {
           const el = document.createElement("div");
           el.className = `block ${getBlockClass(b, t)}`;
