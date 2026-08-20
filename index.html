@@ -15,14 +15,14 @@
       --grid-line: rgba(148, 163, 184, 0.22);
       --grid-line-half: rgba(148, 163, 184, 0.1);
       --col-line: rgba(100, 116, 139, 0.18);
-      --level-bg: #dcfce7;
-      --level-border: #86efac;
-      --level-accent: #22c55e;
-      --level-text: #166534;
-      --level-late-bg: #e2e8f0;
+      --level-bg: #86efac;
+      --level-border: #4ade80;
+      --level-accent: #16a34a;
+      --level-text: #14532d;
+      --level-late-bg: #c5cdd6;
       --level-late-border: #94a3b8;
       --level-late-accent: #64748b;
-      --level-late-text: #334155;
+      --level-late-text: #1e293b;
       --break-bg: #fffbeb;
       --break-border: #fde68a;
       --break-accent: #f59e0b;
@@ -2037,7 +2037,8 @@
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
-    const TIMETABLE_CACHE_VERSION = 1;
+    const TIMETABLE_CACHE_VERSION = 2;
+    const LATE_COLOR_LOGIC_VERSION = 2;
     const TIMETABLE_SYNC_CHANNEL = "tournamentTimetableSync";
     const TIMETABLE_SYNC_PING_KEY = "tournamentTimetableSyncPing";
     let viewerAppliedSavedAt = "";
@@ -2870,6 +2871,7 @@
       }
       overlapHighlight = payload.overlapHighlight || { mode: "none", bandId: null };
       loadedFromSheet = true;
+      applyLateStylesToAllTournaments();
       renderDayTabs();
       renderBoard();
       finishOverlapRestore({
@@ -5133,6 +5135,41 @@
       const yellow = resolveLateYellowLevel(tournament, overlay, markers);
       if (yellow != null) return applyLateStylesToBlocks(tournament, yellow, false);
       return applyLateStylesToBlocks(tournament, null, false);
+    }
+
+    function tournamentHasLateCutoff(tournament) {
+      return !!(
+        parseLateLevelNumber(tournament?.lateLevel) ||
+        (tournament?.yellowLevel != null && tournament.yellowLevel !== "") ||
+        String(tournament?.lateTime || "").trim()
+      );
+    }
+
+    function applyLateStylesForSheet(sheetName) {
+      for (const list of Object.values(tournamentsByDay)) {
+        for (const tournament of list) {
+          if ((tournament.sheetName || tournament.name) !== sheetName) continue;
+          applyLateRegistrationStyles(tournament);
+        }
+      }
+    }
+
+    function applyLateStylesToAllTournaments() {
+      for (const list of Object.values(tournamentsByDay)) {
+        for (const tournament of list) applyLateRegistrationStyles(tournament);
+      }
+    }
+
+    function sheetNeedsLateColorReparse(sheetName) {
+      let found = false;
+      for (const list of Object.values(tournamentsByDay)) {
+        for (const tournament of list) {
+          if ((tournament.sheetName || tournament.name) !== sheetName) continue;
+          found = true;
+          if (!tournamentHasLateCutoff(tournament)) return true;
+        }
+      }
+      return !found;
     }
 
     async function fetchHtmlviewMarkers(spreadsheetId, gid, sheetName) {
@@ -7847,8 +7884,8 @@
       MUTED: "#64748b",
       TITLE: "#1e293b",
       BLOCK: {
-        level: { fill: "#dcfce7", stroke: "#86efac", accent: "#22c55e", text: "#166534" },
-        "level-late": { fill: "#e2e8f0", stroke: "#94a3b8", accent: "#64748b", text: "#334155" },
+        level: { fill: "#86efac", stroke: "#4ade80", accent: "#16a34a", text: "#14532d" },
+        "level-late": { fill: "#c5cdd6", stroke: "#94a3b8", accent: "#64748b", text: "#1e293b" },
         break: { fill: "#fffbeb", stroke: "#fde68a", accent: "#f59e0b", text: "#92400e", time: "#7c2d12", players: "#f59e0b" }
       },
       OVERLAP: {
@@ -8426,7 +8463,8 @@
         revision: revision || null,
         gvizHash,
         markersHash,
-        csvHash
+        csvHash,
+        lateLogicVersion: LATE_COLOR_LOGIC_VERSION
       };
     }
 
@@ -8484,18 +8522,30 @@
       const cacheKey = sheetCacheKey(item);
       const cached = sheetSnapshotCache[cacheKey];
 
-      if (revision && cached?.revision === revision && hasTournamentsForSheet(item.sheetName)) {
+      if (
+        revision &&
+        cached?.revision === revision &&
+        cached?.lateLogicVersion === LATE_COLOR_LOGIC_VERSION &&
+        hasTournamentsForSheet(item.sheetName) &&
+        !sheetNeedsLateColorReparse(item.sheetName)
+      ) {
+        applyLateStylesForSheet(item.sheetName);
         return { changed: false, count: 0 };
       }
 
       const gvizText = await fetchGvizText(url, item.sheetName, item.gid);
       const gvizHash = hashString(gvizText);
+      const snapshotIsCurrent =
+        cached?.gvizHash === gvizHash &&
+        cached?.lateLogicVersion === LATE_COLOR_LOGIC_VERSION &&
+        !sheetNeedsLateColorReparse(item.sheetName);
 
       if (
-        cached?.gvizHash === gvizHash &&
+        snapshotIsCurrent &&
         hasTournamentsForSheet(item.sheetName) &&
         (!incremental || cached.markersHash)
       ) {
+        applyLateStylesForSheet(item.sheetName);
         storeSheetSnapshot(
           item,
           revision || cached.revision,
@@ -8520,9 +8570,12 @@
       const contentUnchanged =
         cached?.gvizHash === gvizHash &&
         cached?.markersHash === markersHash &&
-        cached?.csvHash === csvHash;
+        cached?.csvHash === csvHash &&
+        cached?.lateLogicVersion === LATE_COLOR_LOGIC_VERSION &&
+        !sheetNeedsLateColorReparse(item.sheetName);
 
       if (contentUnchanged && hasTournamentsForSheet(item.sheetName)) {
+        applyLateStylesForSheet(item.sheetName);
         storeSheetSnapshot(item, revision || cached.revision, gvizHash, markersHash, csvHash);
         return { changed: false, count: 0 };
       }
