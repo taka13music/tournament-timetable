@@ -17,6 +17,13 @@ def normalize_slug(raw):
     return slug
 
 
+def stamp(record):
+    try:
+        return int(record.get("updatedAt") or record.get("t") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def load_events(path):
     if not path.exists():
         return {"version": 1, "selectedId": None, "events": []}
@@ -59,36 +66,86 @@ def fetch_ntfy():
 
 
 def apply_updates(data, records):
+    by_id = {}
     by_slug = {}
     for event in data.get("events") or []:
+        event_id = event.get("id")
         slug = normalize_slug(event.get("slug") or event.get("name"))
+        if event_id:
+            by_id[event_id] = event
         if slug:
             by_slug[slug] = event
 
-    latest = {}
+    latest_by_id = {}
+    latest_by_slug = {}
     for record in records:
+        record_id = str(record.get("id") or "").strip()
         slug = normalize_slug(record.get("slug") or record.get("name"))
+        rec_t = stamp(record)
+        if record_id:
+            prev = latest_by_id.get(record_id)
+            if not prev or rec_t >= stamp(prev):
+                latest_by_id[record_id] = record
         if slug:
-            latest[slug] = record
+            prev = latest_by_slug.get(slug)
+            if not prev or rec_t >= stamp(prev):
+                latest_by_slug[slug] = record
 
-    for slug, record in latest.items():
-        if record.get("deleted"):
+    def forget(event):
+        if not event:
+            return
+        event_id = event.get("id")
+        slug = normalize_slug(event.get("slug") or event.get("name"))
+        if event_id:
+            by_id.pop(event_id, None)
+        if slug:
             by_slug.pop(slug, None)
-            continue
-        url = str(record.get("sheetUrl") or "")
-        if not SHEET_RE.search(url):
-            continue
-        existing = by_slug.get(slug) or {}
-        by_slug[slug] = {
-            "id": record.get("id") or existing.get("id") or f"evt-{slug}",
-            "name": record.get("name") or existing.get("name") or slug,
-            "slug": slug,
-            "sheetUrl": url,
-            "sheetStart": record.get("sheetStart") or existing.get("sheetStart") or "",
-            "sheetEnd": record.get("sheetEnd") or existing.get("sheetEnd") or "",
-        }
 
-    events = list(by_slug.values())
+    def upsert(record):
+        slug = normalize_slug(record.get("slug") or record.get("name"))
+        record_id = str(record.get("id") or "").strip()
+        existing = (record_id and by_id.get(record_id)) or (slug and by_slug.get(slug)) or {}
+        if record.get("deleted"):
+            forget(existing)
+            if slug:
+                by_slug.pop(slug, None)
+            return
+        url = str(record.get("sheetUrl") or existing.get("sheetUrl") or "")
+        if not SHEET_RE.search(url):
+            return
+        rec_t = stamp(record)
+        exist_t = stamp(existing)
+        if existing and rec_t < exist_t:
+            return
+        newer = record if rec_t >= exist_t else existing
+        older = existing if newer is record else record
+        new_event = {
+            "id": record_id or existing.get("id") or f"evt-{slug}",
+            "name": newer.get("name") or older.get("name") or slug,
+            "slug": slug or normalize_slug(existing.get("slug") or existing.get("name")),
+            "sheetUrl": url,
+            "sheetStart": newer.get("sheetStart") or older.get("sheetStart") or "",
+            "sheetEnd": newer.get("sheetEnd") or older.get("sheetEnd") or "",
+            "updatedAt": max(rec_t, exist_t) or None,
+        }
+        if not new_event["updatedAt"]:
+            new_event.pop("updatedAt", None)
+        forget(existing)
+        by_id[new_event["id"]] = new_event
+        if new_event.get("slug"):
+            by_slug[new_event["slug"]] = new_event
+
+    seen_ids = set()
+    for record in latest_by_id.values():
+        upsert(record)
+        if record.get("id"):
+            seen_ids.add(str(record.get("id")))
+    for record in latest_by_slug.values():
+        if str(record.get("id") or "") in seen_ids:
+            continue
+        upsert(record)
+
+    events = list(by_id.values())
     selected = data.get("selectedId")
     if selected and not any(event.get("id") == selected for event in events):
         selected = events[0]["id"] if events else None

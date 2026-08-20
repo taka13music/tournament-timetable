@@ -2093,19 +2093,31 @@
       return `evt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
+    function isPlaceholderEventSlug(slug) {
+      const normalized = normalizeEventSlug(slug);
+      return !normalized || normalized === "event" || /^event-\d+$/.test(normalized);
+    }
+
+    function eventUpdatedAt(event) {
+      const n = Number(event?.updatedAt || event?.t || 0);
+      return Number.isFinite(n) ? n : 0;
+    }
+
     function createEmptyEvent(partial = {}) {
       const name = String(partial.name || "").trim();
       const slug =
         normalizeEventSlug(partial.slug) ||
         normalizeEventSlug(name) ||
         "event";
+      const updatedAt = eventUpdatedAt(partial);
       return {
         id: partial.id || createEventId(),
         name,
         slug,
         sheetUrl: String(partial.sheetUrl || "").trim(),
         sheetStart: String(partial.sheetStart || "").trim(),
-        sheetEnd: String(partial.sheetEnd || "").trim()
+        sheetEnd: String(partial.sheetEnd || "").trim(),
+        updatedAt: updatedAt || undefined
       };
     }
 
@@ -2126,11 +2138,17 @@
       const name = String($("eventName")?.value || "").trim();
       return {
         name,
-        slug: uniqueEventSlug(name, eventRegistry.selectedId),
         sheetUrl: String($("sheetUrl")?.value || "").trim(),
         sheetStart: String($("sheetStart")?.value || "").trim(),
         sheetEnd: String($("sheetEnd")?.value || "").trim()
       };
+    }
+
+    function resolveStableEventSlug(event, name) {
+      if (event?.slug && !isPlaceholderEventSlug(event.slug)) {
+        return normalizeEventSlug(event.slug);
+      }
+      return uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
     }
 
     function applyEventToForm(event) {
@@ -2154,9 +2172,11 @@
     }
 
     function buildEventViewUrl(event) {
-      const name = event?.name || $("eventName")?.value || "";
-      if (!String(name).trim()) return "";
-      const slug = uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
+      const current = event || getSelectedEvent();
+      const name = current?.name || $("eventName")?.value || "";
+      if (!String(name).trim() && !current?.slug) return "";
+      const slug = resolveStableEventSlug(current, name);
+      if (!slug) return "";
       return `${getViewerSiteOrigin()}/e/${encodeURIComponent(slug)}`;
     }
 
@@ -2752,7 +2772,7 @@
       if (!selected) return null;
       const values = readEventFormValues();
       selected.name = values.name || selected.name || "無題の大会";
-      selected.slug = uniqueEventSlug(selected.name, selected.id);
+      selected.slug = resolveStableEventSlug(selected, selected.name);
       selected.sheetUrl = values.sheetUrl;
       selected.sheetStart = values.sheetStart;
       selected.sheetEnd = values.sheetEnd;
@@ -3143,11 +3163,15 @@
 
     function parseSharedEventRecord(raw) {
       if (!raw || raw.deleted) return null;
-      const event = createEmptyEvent(raw);
+      const event = createEmptyEvent({
+        ...raw,
+        updatedAt: eventUpdatedAt(raw)
+      });
       if (!normalizeEventSlug(event.slug || event.name) || !isSharedSheetUrl(event.sheetUrl)) {
         return null;
       }
       event.slug = normalizeEventSlug(event.slug || event.name);
+      event.updatedAt = eventUpdatedAt(raw) || event.updatedAt || Date.now();
       return event;
     }
 
@@ -3162,7 +3186,7 @@
         const rows = text.startsWith("[")
           ? JSON.parse(text)
           : text.split("\n").filter(Boolean).map((line) => JSON.parse(line));
-        const bySlug = new Map();
+        const byKey = new Map();
         for (const row of rows) {
           if (row?.event && row.event !== "message") continue;
           let data = row?.message != null ? row.message : row;
@@ -3174,13 +3198,18 @@
             }
           }
           const slug = normalizeEventSlug(data?.slug || data?.name);
-          if (!slug) continue;
-          bySlug.set(slug, data);
+          const id = String(data?.id || "").trim();
+          const key = id || slug;
+          if (!key) continue;
+          const prev = byKey.get(key);
+          if (!prev || eventUpdatedAt(data) >= eventUpdatedAt(prev)) {
+            byKey.set(key, data);
+          }
         }
-        for (const data of bySlug.values()) {
+        for (const data of byKey.values()) {
           const slug = normalizeEventSlug(data.slug || data.name);
           if (data.deleted) {
-            deletedSlugs.add(slug);
+            if (slug) deletedSlugs.add(slug);
             continue;
           }
           const event = parseSharedEventRecord(data);
@@ -3197,7 +3226,7 @@
       if (!slug) return false;
       if (!deleted && !isSharedSheetUrl(event?.sheetUrl)) return false;
       const payload = deleted
-        ? { v: 1, slug, deleted: true, t: Date.now() }
+        ? { v: 1, id: event?.id || "", slug, deleted: true, t: Date.now() }
         : {
             v: 1,
             id: event.id,
@@ -3206,7 +3235,7 @@
             sheetUrl: event.sheetUrl,
             sheetStart: event.sheetStart || "",
             sheetEnd: event.sheetEnd || "",
-            t: Date.now()
+            t: eventUpdatedAt(event) || Date.now()
           };
       try {
         const res = await fetch(SHARED_EVENTS_NTFY_URL, {
@@ -3235,7 +3264,8 @@
 
     async function refreshEventRegistryFromRemote({ render = false, force = false } = {}) {
       if (IS_VIEWER_MODE) return eventRegistry;
-      if (!force && parseEditorHash().view === "event") return eventRegistry;
+      const typingName = !force && document.activeElement && document.activeElement.id === "eventName";
+      if (typingName) return eventRegistry;
       const selectedId = eventRegistry.selectedId;
       const snapshot = JSON.stringify(eventRegistry.events || []);
       const fromFile = await fetchEventsJson().catch(() => null);
@@ -3250,34 +3280,54 @@
       persistEventRegistry();
       if (render && snapshot !== JSON.stringify(eventRegistry.events || [])) {
         renderEventList();
+        const selected = getSelectedEvent();
+        if (selected && parseEditorHash().view === "event" && document.activeElement?.id !== "eventName") {
+          applyEventToForm(selected);
+        }
       }
       return eventRegistry;
+    }
+
+    function mergeEventPair(existing, incoming) {
+      const existingTs = eventUpdatedAt(existing);
+      const incomingTs = eventUpdatedAt(incoming);
+      const newer = incomingTs >= existingTs ? incoming : existing;
+      const older = newer === incoming ? existing : incoming;
+      const slug = normalizeEventSlug(newer.slug || older.slug || newer.name || older.name);
+      return createEmptyEvent({
+        id: existing.id || incoming.id,
+        name: newer.name || older.name,
+        slug,
+        sheetUrl: newer.sheetUrl || older.sheetUrl,
+        sheetStart: newer.sheetStart || older.sheetStart,
+        sheetEnd: newer.sheetEnd || older.sheetEnd,
+        updatedAt: Math.max(existingTs, incomingTs) || undefined
+      });
     }
 
     function mergeEventRegistries(base, overlay) {
       const byId = new Map();
       const bySlug = new Map();
+      const remember = (event) => {
+        byId.set(event.id, event);
+        const slug = normalizeEventSlug(event.slug || event.name);
+        if (slug) bySlug.set(slug, event);
+      };
+      const forget = (event) => {
+        if (event?.id) byId.delete(event.id);
+        const slug = normalizeEventSlug(event?.slug || event?.name);
+        if (slug) bySlug.delete(slug);
+      };
       const add = (raw) => {
         const event = createEmptyEvent(raw);
         const slug = normalizeEventSlug(event.slug || event.name);
-        if (slug && bySlug.has(slug)) {
-          const existing = bySlug.get(slug);
-          const merged = createEmptyEvent({
-            ...existing,
-            ...event,
-            id: existing.id,
-            slug,
-            sheetUrl: event.sheetUrl || existing.sheetUrl,
-            sheetStart: event.sheetStart || existing.sheetStart,
-            sheetEnd: event.sheetEnd || existing.sheetEnd,
-            name: event.name || existing.name
-          });
-          byId.set(existing.id, merged);
-          bySlug.set(slug, merged);
+        const existing = (event.id && byId.get(event.id)) || (slug && bySlug.get(slug)) || null;
+        if (existing) {
+          forget(existing);
+          remember(mergeEventPair(existing, event));
           return;
         }
-        byId.set(event.id, event);
-        if (slug) bySlug.set(slug, event);
+        remember(event);
       };
       for (const event of base?.events || []) add(event);
       for (const event of overlay?.events || []) add(event);
@@ -3324,6 +3374,7 @@
 
     function saveCurrentEventFromForm({ announce = true } = {}) {
       let selected = getSelectedEvent();
+      const previousSlug = selected?.slug || "";
       if (!selected) {
         selected = createEmptyEvent(readEventFormValues());
         if (!String(selected.name || "").trim()) {
@@ -3332,6 +3383,7 @@
           return null;
         }
         selected.slug = uniqueEventSlug(selected.name, selected.id);
+        selected.updatedAt = Date.now();
         eventRegistry.events.push(selected);
         eventRegistry.selectedId = selected.id;
       } else {
@@ -3341,11 +3393,15 @@
           $("eventName")?.focus();
           return null;
         }
-        selected.slug = uniqueEventSlug(selected.name, selected.id);
+        selected.slug = resolveStableEventSlug(selected, selected.name);
+        selected.updatedAt = Date.now();
       }
       applyEventToForm(selected);
       renderEventList();
       persistEventRegistry();
+      if (previousSlug && previousSlug !== selected.slug) {
+        publishSharedEventRecord({ slug: previousSlug, id: selected.id }, { deleted: true }).catch(() => {});
+      }
       if (announce) {
         const viewUrl = buildEventViewUrl(selected);
         setStatus(`大会「${selected.name}」を保存しました（閲覧: ${viewUrl}）`);
@@ -3400,7 +3456,8 @@
             slug: event.slug,
             sheetUrl: event.sheetUrl,
             sheetStart: event.sheetStart,
-            sheetEnd: event.sheetEnd
+            sheetEnd: event.sheetEnd,
+            updatedAt: eventUpdatedAt(event) || undefined
           }))
         },
         null,
@@ -3451,7 +3508,6 @@
         const selected = getSelectedEvent();
         if (selected) {
           selected.name = String($("eventName")?.value || "").trim() || selected.name;
-          selected.slug = uniqueEventSlug(selected.name, selected.id);
         }
         updateEventViewUrlHint(selected || getSelectedEvent());
       });
@@ -4115,6 +4171,7 @@
       });
       const checkLatest = () => {
         reloadViewerFromAdminCache({ announce: false }).catch(() => {});
+        refreshViewerEventName().catch(() => {});
       };
       window.addEventListener("focus", checkLatest);
       document.addEventListener("visibilitychange", () => {
@@ -4137,6 +4194,7 @@
       renderViewerFromDecoded(decoded);
       updateViewerBanner(decoded, true);
       setStatus("");
+      refreshViewerEventName().catch(() => {});
       return true;
     }
 
@@ -4144,6 +4202,7 @@
       hideViewerEventPicker();
       const boardWrap = document.querySelector(".board-wrap");
       if (boardWrap) boardWrap.style.display = "";
+      await overlaySharedEventName(decoded, getViewerEventSlug() || decoded?.eventId || "");
       viewerPublishConfig = decoded;
       const sameSnapshot =
         decoded?.publishedAt && decoded.publishedAt === viewerAppliedSavedAt && dayTabItems.length;
@@ -4341,6 +4400,44 @@
       ) || null;
     }
 
+    async function lookupSharedEventBySlug(slug) {
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized) return null;
+      try {
+        const registry = await fetchEventsJson();
+        const hit = findEventBySlug(normalized, registry);
+        if (hit) return hit;
+      } catch (_) {}
+      try {
+        const updates = await fetchNtfySharedUpdates();
+        return (
+          (updates.upserts || []).find(
+            (item) =>
+              normalizeEventSlug(item.slug) === normalized ||
+              normalizeEventSlug(item.name) === normalized
+          ) || null
+        );
+      } catch (_) {}
+      return null;
+    }
+
+    async function overlaySharedEventName(decoded, slug) {
+      if (!decoded) return decoded;
+      const event = await lookupSharedEventBySlug(slug || decoded.eventId || "");
+      if (event?.name) decoded.eventName = event.name;
+      return decoded;
+    }
+
+    async function refreshViewerEventName() {
+      if (!viewerPublishConfig) return false;
+      const slug = getViewerEventSlug() || viewerPublishConfig.eventId || "";
+      const before = viewerPublishConfig.eventName || "";
+      await overlaySharedEventName(viewerPublishConfig, slug);
+      if ((viewerPublishConfig.eventName || "") === before) return false;
+      updateViewerBanner(viewerPublishConfig, hasPublishSnapshot(viewerPublishConfig));
+      return true;
+    }
+
     function eventToViewerSheetConfig(event) {
       if (!event?.sheetUrl) return null;
       return {
@@ -4381,14 +4478,14 @@
         (err) => err
       );
       if (fromPublished && !(fromPublished instanceof Error) && hasPublishSnapshot(fromPublished)) {
-        return fromPublished;
+        return overlaySharedEventName(fromPublished, slug);
       }
       if (
         fromPublished &&
         !(fromPublished instanceof Error) &&
         hasPublishSheetConfig(fromPublished)
       ) {
-        return fromPublished;
+        return overlaySharedEventName(fromPublished, slug);
       }
       const fromEvents = await loadViewerConfigFromEventsJson(slug || "");
       if (fromEvents) return fromEvents;
