@@ -3,20 +3,34 @@
   "selectedId": "evt-spadie-osaka-2nd",
   "events": [
     {
+      "id": "evt-u-30-2026-summer",
+      "name": "u-30 2026 SUMMER",
+      "slug": "u-30-2026-summer",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1ihfMDprj1AJhVKBIJWpbyWoCEZw5BkXOHBWL9cq1CfA/edit?gid=257189552#gid=257189552",
+      "sheetStart": "#01 NLH Main Event Day 1A",
+      "sheetEnd": "#24 NLH Employees",
+      "updatedAt": 1787208795575
+    },
+    {
       "id": "evt-spadie-osaka-2nd",
       "name": "SPADIE OSAKA 2nd",
       "slug": "spadie-osaka-2nd",
       "sheetUrl": "https://docs.google.com/spreadsheets/d/1mT9Y1FVd0l9bbyxNmYAkJYLaEK3JDCeaIb9BSJuuOv8/edit?gid=372619395",
       "sheetStart": "Main Day 1A",
-      "sheetEnd": "Finale"
+      "sheetEnd": "Finale",
+      "updatedAt": 1787207441076
+    }
+  ],
+  "deleted": [
+    {
+      "id": "a12d0a19-3597-478c-af4f-fb022dafacbf",
+      "slug": "event-2",
+      "t": 1787207817416
     },
     {
-      "id": "evt-u-30-2026-summer",
-      "name": "u-30 2026 SUMMER",
-      "slug": "u-30-2026-summer",
-      "sheetUrl": "https://docs.google.com/spreadsheets/d/1ihfMDprj1AJhVKBlJWpbyWoCEZw5BkXOHBWL9cq1CfA/edit",
-      "sheetStart": "#01 NLH Main Event Day 1A",
-      "sheetEnd": "#24 NLH Employees"
+      "id": "1d3c4b83-805d-4f4f-9559-ddee54f28b5f",
+      "slug": "test2",
+      "t": 1787207447292
     }
   ]
 }
