@@ -5,17 +5,17 @@ Google スプレッドシートからトーナメントのブレイク時間を�
 | 用途 | URL |
 |------|-------------|
 | **管理画面** | `https://tournament-timetable.surge.sh/` |
-| **閲覧** | `https://tournament-timetable.surge.sh/?mode=view&event=スラッグ` |
+| **閲覧** | `https://tournament-timetable.surge.sh/?mode=view&event=大会名` |
 
 管理も閲覧も同じ Surge サイトです。大会データを「保存」すると GitHub に書き出され、他の端末でも同じ閲覧 URL で開けます。
 
 ## 使い方（大会ごと）
 
-1. 管理画面で **大会を追加**（大会名・スラッグ・シートURL・タブ範囲）
+1. 管理画面で **大会を追加**（大会名・シートURL・タブ範囲）
 2. 「公開」でシートを読み込む。以降の変更は「更新」（差分）
 3. 初回だけ「保存先の設定」に GitHub Token（`repo` 権限）を入れる
-4. 「保存」を押す。`events.json` と `published/{スラッグ}.json` がリポジトリに書き込まれ、まもなく他の端末でも同じ閲覧 URL で見られます
-5. 閲覧は `?mode=view&event=スラッグ`（例: `/?mode=view&event=jopt-2025`）
+4. 「保存」を押す。`events.json` と `published/{大会名}.json` がリポジトリに書き込まれ、まもなく他の端末でも同じ閲覧 URL で見られます
+5. 閲覧は `?mode=view&event=大会名`（例: 大会名が `JOPT 2025` なら `/?mode=view&event=jopt-2025`）
 
 Token はブラウザの localStorage にだけ保存されます。Token を設定済みなら、「公開」「更新」のあとにも自動でサーバーへ保存します。GitHub への書き込み後、Actions が Surge を更新するまで 1 分ほどかかることがあります。
 

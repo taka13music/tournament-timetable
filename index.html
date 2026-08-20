@@ -275,7 +275,7 @@
 
     .controls-detail-grid {
       display: grid;
-      grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 1fr) auto;
+      grid-template-columns: minmax(180px, 1fr) auto;
       gap: 12px;
       align-items: end;
     }
@@ -303,24 +303,6 @@
       font-size: var(--text-xs);
       word-break: break-all;
       color: var(--text);
-    }
-
-    .viewer-base-url-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .viewer-base-url-row input {
-      flex: 1 1 220px;
-      min-width: 0;
-    }
-
-    .viewer-base-url-row input[readonly] {
-      background: #f8fafc;
-      color: var(--muted);
-      cursor: default;
     }
 
     .controls-sheet-grid {
@@ -1852,10 +1834,7 @@
           <div class="field">
             <label for="eventName">&#22823;&#20250;&#21517;</label>
             <input id="eventName" type="text" value="" placeholder="&#20363;: JOPT 2025" />
-          </div>
-          <div class="field">
-            <label for="eventSlug">&#12473;&#12521;&#12483;&#12464;&#65288;URL&#29992;&#65289;</label>
-            <input id="eventSlug" type="text" value="" placeholder="&#20363;: jopt-2025" spellcheck="false" />
+            <span class="hint">&#38322;&#35239;URL&#12399;&#22823;&#20250;&#21517;&#12363;&#12425;&#33258;&#21205;&#12391;&#27770;&#12414;&#12426;&#12414;&#12377;</span>
           </div>
           <div class="controls-event-actions">
             <button type="button" id="eventSaveBtn" class="btn-secondary">&#35373;&#23450;&#12434;&#20445;&#23384;</button>
@@ -1863,31 +1842,9 @@
           </div>
         </div>
 
-        <details class="editor-settings-details" open>
-          <summary>&#38322;&#35239;URL&#35373;&#23450;</summary>
-          <div class="controls-sheet-grid" style="margin-top: 12px;">
-            <div class="field field-url">
-              <label for="viewerBaseUrl">&#38322;&#35239;&#29992;&#12505;&#12540;&#12473;URL</label>
-              <div class="viewer-base-url-row">
-                <input
-                  id="viewerBaseUrl"
-                  type="url"
-                  value=""
-                  placeholder="&#20363;: https://tournament-timetable.surge.sh"
-                  spellcheck="false"
-                />
-                <button type="button" id="viewerBaseUrlEditBtn" class="btn-secondary" hidden>&#22793;&#26356;</button>
-                <button type="button" id="viewerBaseUrlCommitBtn" class="btn-primary" hidden>&#20445;&#23384;</button>
-                <button type="button" id="viewerBaseUrlCancelBtn" class="btn-secondary" hidden>&#12461;&#12515;&#12531;&#12475;&#12523;</button>
-              </div>
-              <span class="hint" id="viewerBaseUrlHint">&#31354;&#27396;&#12394;&#12425;&#20170;&#38283;&#12356;&#12390;&#12356;&#12427;&#12469;&#12452;&#12488;&#12434;&#20351;&#29992;&#12290;&#35373;&#23450;&#24460;&#12399;&#22522;&#26412;&#22793;&#26356;&#12391;&#12365;&#12414;&#12379;&#12435;</span>
-            </div>
-          </div>
-        </details>
-
         <div class="controls-view-url" id="eventViewUrlBar">
           <span class="controls-view-url-label">&#38322;&#35239;URL</span>
-          <code id="eventViewUrlHint">?mode=view&amp;event=&#12473;&#12521;&#12483;&#12464;</code>
+          <code id="eventViewUrlHint">?mode=view&amp;event=&#22823;&#20250;&#21517;</code>
           <button type="button" id="eventCopyViewUrlBtn" class="btn-secondary">URL&#12434;&#12467;&#12500;&#12540;</button>
           <button type="button" id="openEventViewBtn" class="btn-primary">&#38322;&#35239;&#12434;&#38283;&#12367;</button>
         </div>
@@ -2113,7 +2070,6 @@
     const PUBLISHED_JSON_PATH = "published/timetable.json";
     const EVENTS_JSON_PATH = "events.json";
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
-    const VIEWER_BASE_URL_KEY = "tournamentViewerBaseUrl";
     const VIEWER_DEPLOY_ZIP_DEFAULT = "viewer.zip";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
@@ -2134,6 +2090,19 @@
         .replace(/^-|-$/g, "");
     }
 
+    function uniqueEventSlug(name, excludeId = null) {
+      const base = normalizeEventSlug(name) || "event";
+      let slug = base;
+      let n = 2;
+      while (
+        eventRegistry.events.some((item) => item.id !== excludeId && item.slug === slug)
+      ) {
+        slug = `${base}-${n}`;
+        n += 1;
+      }
+      return slug;
+    }
+
     function createEventId() {
       if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
       return `evt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -2143,7 +2112,7 @@
       return {
         id: partial.id || createEventId(),
         name: String(partial.name || "").trim(),
-        slug: normalizeEventSlug(partial.slug || partial.name || ""),
+        slug: normalizeEventSlug(partial.name || partial.slug || "") || "event",
         sheetUrl: String(partial.sheetUrl || "").trim(),
         sheetStart: String(partial.sheetStart || "").trim(),
         sheetEnd: String(partial.sheetEnd || "").trim()
@@ -2164,9 +2133,10 @@
     }
 
     function readEventFormValues() {
+      const name = String($("eventName")?.value || "").trim();
       return {
-        name: String($("eventName")?.value || "").trim(),
-        slug: normalizeEventSlug($("eventSlug")?.value || ""),
+        name,
+        slug: uniqueEventSlug(name, eventRegistry.selectedId),
         sheetUrl: String($("sheetUrl")?.value || "").trim(),
         sheetStart: String($("sheetStart")?.value || "").trim(),
         sheetEnd: String($("sheetEnd")?.value || "").trim()
@@ -2175,7 +2145,6 @@
 
     function applyEventToForm(event) {
       if ($("eventName")) $("eventName").value = event?.name || "";
-      if ($("eventSlug")) $("eventSlug").value = event?.slug || "";
       applySheetConfigToDom({
         sheetUrl: event?.sheetUrl || "",
         sheetStart: event?.sheetStart || "",
@@ -2188,147 +2157,14 @@
       updateEventViewUrlHint(event);
     }
 
-    let viewerBaseUrlEditing = false;
-    let viewerBaseUrlDraft = "";
-
-    function normalizeViewerBaseUrl(raw) {
-      let value = String(raw || "").trim();
-      if (!value) return "";
-      if (!/^https?:\/\//i.test(value)) value = `https://${value}`;
-      try {
-        const url = new URL(value);
-        return `${url.origin}${url.pathname}`.replace(/\/$/, "");
-      } catch (_) {
-        return value.replace(/\/$/, "");
-      }
-    }
-
-    function loadViewerBaseUrl() {
-      try {
-        return normalizeViewerBaseUrl(localStorage.getItem(VIEWER_BASE_URL_KEY) || "");
-      } catch (_) {
-        return "";
-      }
-    }
-
-    function syncViewerBaseUrlControls() {
-      const input = $("viewerBaseUrl");
-      const editBtn = $("viewerBaseUrlEditBtn");
-      const commitBtn = $("viewerBaseUrlCommitBtn");
-      const cancelBtn = $("viewerBaseUrlCancelBtn");
-      const hint = $("viewerBaseUrlHint");
-      if (!input) return;
-      const saved = loadViewerBaseUrl();
-      const locked = !!saved && !viewerBaseUrlEditing;
-      input.readOnly = locked;
-      if (editBtn) editBtn.hidden = !saved || viewerBaseUrlEditing;
-      if (commitBtn) commitBtn.hidden = !viewerBaseUrlEditing && !!saved;
-      if (cancelBtn) cancelBtn.hidden = !viewerBaseUrlEditing;
-      if (!viewerBaseUrlEditing) {
-        input.value = saved;
-      }
-      if (hint) {
-        if (viewerBaseUrlEditing) {
-          hint.textContent = "新しいURLを入力して「保存」してください。空欄にすると今開いているサイトを使います。";
-        } else if (saved) {
-          hint.textContent = "設定済みです。変更する場合は「変更」を押してください。";
-        } else {
-          hint.textContent = "空欄なら今開いているサイトを使用します。初回はここに入力して「保存」してください。";
-        }
-      }
-    }
-
-    function saveViewerBaseUrl(raw, { announce = false } = {}) {
-      const normalized = normalizeViewerBaseUrl(raw);
-      try {
-        if (normalized) localStorage.setItem(VIEWER_BASE_URL_KEY, normalized);
-        else localStorage.removeItem(VIEWER_BASE_URL_KEY);
-      } catch (err) {
-        console.warn("viewer base url save failed", err);
-        if (announce) {
-          setStatus("閲覧用ベースURLの保存に失敗しました（ブラウザの保存容量を確認してください）", true);
-        }
-        return "";
-      }
-      viewerBaseUrlEditing = false;
-      viewerBaseUrlDraft = "";
-      syncViewerBaseUrlControls();
-      updateEventViewUrlHint();
-      renderEventList();
-      if (announce) {
-        setStatus(
-          normalized
-            ? `閲覧用ベースURLを保存しました: ${normalized}`
-            : "閲覧用ベースURLをクリアしました（今開いているサイトを使用）"
-        );
-      }
-      return normalized;
-    }
-
-    function beginViewerBaseUrlEdit() {
-      const saved = loadViewerBaseUrl();
-      if (saved) {
-        const ok = confirm(
-          "閲覧用ベースURLを変更しますか？\n\n" +
-            `現在: ${saved}\n\n` +
-            "共有中の閲覧URLが変わるため、関係者への周知が必要になる場合があります。"
-        );
-        if (!ok) return;
-      }
-      viewerBaseUrlEditing = true;
-      viewerBaseUrlDraft = saved;
-      syncViewerBaseUrlControls();
-      const input = $("viewerBaseUrl");
-      if (input) {
-        input.value = saved;
-        input.focus();
-        input.select();
-      }
-    }
-
-    function cancelViewerBaseUrlEdit() {
-      viewerBaseUrlEditing = false;
-      viewerBaseUrlDraft = "";
-      syncViewerBaseUrlControls();
-      updateEventViewUrlHint();
-      setStatus("閲覧用ベースURLの変更をキャンセルしました");
-    }
-
-    function commitViewerBaseUrlEdit() {
-      const next = normalizeViewerBaseUrl($("viewerBaseUrl")?.value || "");
-      const prev = loadViewerBaseUrl();
-      if (next === prev) {
-        viewerBaseUrlEditing = false;
-        syncViewerBaseUrlControls();
-        setStatus("閲覧用ベースURLに変更はありません");
-        return;
-      }
-      if (prev && next !== prev) {
-        const ok = confirm(
-          "この内容で閲覧用ベースURLを保存しますか？\n\n" +
-            `変更前: ${prev || "（未設定）"}\n` +
-            `変更後: ${next || "（未設定＝今開いているサイト）"}`
-        );
-        if (!ok) return;
-      }
-      saveViewerBaseUrl(next, { announce: true });
-    }
-
-    function applyViewerBaseUrlToForm() {
-      viewerBaseUrlEditing = false;
-      viewerBaseUrlDraft = "";
-      syncViewerBaseUrlControls();
-    }
-
     function getViewerSiteOrigin() {
-      const configured = loadViewerBaseUrl();
-      if (configured) return configured;
       return String(location.origin || EDITOR_SITE_ORIGIN).replace(/\/$/, "");
     }
 
     function buildEventViewUrl(event) {
-      const slug = normalizeEventSlug(event?.slug || $("eventSlug")?.value || "");
-      if (!slug) return "";
+      const name = event?.name || $("eventName")?.value || "";
+      if (!String(name).trim()) return "";
+      const slug = uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
       const base = getViewerSiteOrigin();
       return `${base}/?mode=view&event=${encodeURIComponent(slug)}`;
     }
@@ -2337,7 +2173,7 @@
       const hint = $("eventViewUrlHint");
       if (!hint) return;
       const url = buildEventViewUrl(event || getSelectedEvent());
-      hint.textContent = url || "?mode=view&event=スラッグ";
+      hint.textContent = url || "?mode=view&event=大会名";
     }
 
     function parseEditorHash() {
@@ -2391,8 +2227,8 @@
         mainBtn.className = "event-list-item-main";
         mainBtn.innerHTML = `
           <span class="event-list-item-name">${escapeHtml(event.name || "無題の大会")}</span>
-          <span class="event-list-item-meta">${escapeHtml(event.slug || "—")}${
-            url ? `<br>${escapeHtml(url)}` : ""
+          <span class="event-list-item-meta">${
+            url ? escapeHtml(url) : "大会名を入力すると閲覧URLが決まります"
           }</span>
         `;
         mainBtn.addEventListener("click", () => openEventDetail(event.id));
@@ -2444,7 +2280,6 @@
         }
         selectEventById(route.eventId, { clearBoard: true, persist: true });
         showEditorView("event");
-        applyViewerBaseUrlToForm();
         updateEventViewUrlHint(getSelectedEvent());
 
         const restored = await tryRestoreTimetableCache(route.eventId);
@@ -2493,19 +2328,11 @@
     function createNewEventAndOpen() {
       const event = createEmptyEvent({
         name: "新しい大会",
-        slug: "",
         sheetUrl: "",
         sheetStart: "",
         sheetEnd: ""
       });
-      let baseSlug = normalizeEventSlug(event.name) || "event";
-      let slug = baseSlug;
-      let n = 2;
-      while (eventRegistry.events.some((item) => item.slug === slug)) {
-        slug = `${baseSlug}-${n}`;
-        n += 1;
-      }
-      event.slug = slug;
+      event.slug = uniqueEventSlug(event.name, event.id);
       eventRegistry.events.push(event);
       eventRegistry.selectedId = event.id;
       persistEventRegistry();
@@ -2535,8 +2362,8 @@
       const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
       const url = buildEventViewUrl(event);
       if (!url) {
-        setStatus("先に大会スラッグを入力して保存してください", true);
-        $("eventSlug")?.focus();
+        setStatus("先に大会名を入力してください", true);
+        $("eventName")?.focus();
         return;
       }
       try {
@@ -2552,8 +2379,8 @@
       const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
       const url = buildEventViewUrl(event);
       if (!url) {
-        setStatus("先に大会スラッグを入力して保存してください", true);
-        $("eventSlug")?.focus();
+        setStatus("先に大会名を入力してください", true);
+        $("eventName")?.focus();
         return;
       }
       if (loadedFromSheet && Object.keys(tournamentsByDay).length) {
@@ -2702,7 +2529,7 @@
       }
       const event = saveCurrentEventFromForm({ announce: false });
       if (!event?.slug) {
-        throw new Error("大会スラッグを入力してください");
+        throw new Error("大会名を入力してください");
       }
       const settings = saveGithubSettingsFromForm({ announce: false });
       applyGithubSettingsToForm(settings);
@@ -2782,7 +2609,7 @@
       if (!selected) return null;
       const values = readEventFormValues();
       selected.name = values.name || selected.name || "無題の大会";
-      selected.slug = values.slug || normalizeEventSlug(selected.name) || selected.slug;
+      selected.slug = uniqueEventSlug(selected.name, selected.id);
       selected.sheetUrl = values.sheetUrl;
       selected.sheetStart = values.sheetStart;
       selected.sheetEnd = values.sheetEnd;
@@ -3111,49 +2938,32 @@
     }
 
     function saveCurrentEventFromForm({ announce = true } = {}) {
-      // 設定済みかつロック中は保存値を維持。未設定 or 編集中のみ入力欄を反映する。
-      const savedViewerBase = loadViewerBaseUrl();
-      const viewerBase =
-        viewerBaseUrlEditing || !savedViewerBase
-          ? saveViewerBaseUrl($("viewerBaseUrl")?.value || "", { announce: false })
-          : savedViewerBase;
-      if (!viewerBaseUrlEditing) syncViewerBaseUrlControls();
       let selected = getSelectedEvent();
       if (!selected) {
         selected = createEmptyEvent(readEventFormValues());
-        if (!selected.slug) {
-          setStatus("スラッグを入力してください", true);
-          $("eventSlug")?.focus();
+        if (!String(selected.name || "").trim()) {
+          setStatus("大会名を入力してください", true);
+          $("eventName")?.focus();
           return null;
         }
+        selected.slug = uniqueEventSlug(selected.name, selected.id);
         eventRegistry.events.push(selected);
         eventRegistry.selectedId = selected.id;
       } else {
         syncSelectedEventFromForm();
-        if (!selected.slug) {
-          setStatus("スラッグを入力してください", true);
-          $("eventSlug")?.focus();
+        if (!String(selected.name || "").trim()) {
+          setStatus("大会名を入力してください", true);
+          $("eventName")?.focus();
           return null;
         }
-        const dup = eventRegistry.events.find(
-          (event) => event.id !== selected.id && event.slug === selected.slug
-        );
-        if (dup) {
-          setStatus(`スラッグ「${selected.slug}」は別の大会で使われています`, true);
-          return null;
-        }
+        selected.slug = uniqueEventSlug(selected.name, selected.id);
       }
       applyEventToForm(selected);
-      applyViewerBaseUrlToForm();
       renderEventList();
       persistEventRegistry();
       if (announce) {
         const viewUrl = buildEventViewUrl(selected);
-        setStatus(
-          viewerBase
-            ? `設定を保存しました（閲覧: ${viewUrl}）`
-            : `大会「${selected.name}」を保存しました（閲覧: ${viewUrl || `?event=${selected.slug}`}）`
-        );
+        setStatus(`大会「${selected.name}」を保存しました（閲覧: ${viewUrl}）`);
       }
       return selected;
     }
@@ -3217,6 +3027,9 @@
       if (!eventRegistry.selectedId && eventRegistry.events.length) {
         eventRegistry.selectedId = eventRegistry.events[0].id;
       }
+      for (const event of eventRegistry.events) {
+        event.slug = uniqueEventSlug(event.name, event.id);
+      }
       persistEventRegistry();
       renderEventList();
       if (!location.hash || location.hash === "#") {
@@ -3227,35 +3040,24 @@
     }
 
     function setupEventControls() {
-      applyViewerBaseUrlToForm();
       $("eventCreateBtn")?.addEventListener("click", createNewEventAndOpen);
       $("backToEventListBtn")?.addEventListener("click", backToEventList);
       $("eventSaveBtn")?.addEventListener("click", () => saveCurrentEventFromForm());
-      $("viewerBaseUrlEditBtn")?.addEventListener("click", beginViewerBaseUrlEdit);
-      $("viewerBaseUrlCommitBtn")?.addEventListener("click", commitViewerBaseUrlEdit);
-      $("viewerBaseUrlCancelBtn")?.addEventListener("click", cancelViewerBaseUrlEdit);
-      $("viewerBaseUrl")?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          if (viewerBaseUrlEditing || !loadViewerBaseUrl()) commitViewerBaseUrlEdit();
-        } else if (event.key === "Escape" && viewerBaseUrlEditing) {
-          event.preventDefault();
-          cancelViewerBaseUrlEdit();
-        }
-      });
       $("eventCopyViewUrlBtn")?.addEventListener("click", () => {
         copySelectedEventViewUrl();
       });
       $("eventDeleteBtn")?.addEventListener("click", deleteSelectedEvent);
-      $("eventName")?.addEventListener("change", () => {
-        const slugEl = $("eventSlug");
-        if (slugEl && !slugEl.value.trim()) {
-          slugEl.value = normalizeEventSlug($("eventName").value);
+      $("eventName")?.addEventListener("input", () => {
+        const selected = getSelectedEvent();
+        if (selected) {
+          selected.name = String($("eventName")?.value || "").trim() || selected.name;
+          selected.slug = uniqueEventSlug(selected.name, selected.id);
         }
-        updateEventViewUrlHint();
+        updateEventViewUrlHint(selected || getSelectedEvent());
       });
-      $("eventSlug")?.addEventListener("input", () => updateEventViewUrlHint());
-      $("eventSlug")?.addEventListener("change", () => updateEventViewUrlHint());
+      $("eventName")?.addEventListener("change", () => {
+        saveCurrentEventFromForm({ announce: false });
+      });
       window.addEventListener("hashchange", () => {
         applyEditorRoute({ skipHashWrite: true }).catch((err) => {
           console.warn(err);
@@ -4570,8 +4372,8 @@
 
       const event = saveCurrentEventFromForm({ announce: false });
       if (!event?.slug) {
-        setStatus("大会スラッグを入力して保存してください", true);
-        $("eventSlug")?.focus();
+        setStatus("大会名を入力して保存してください", true);
+        $("eventName")?.focus();
         return;
       }
 
