@@ -1103,6 +1103,23 @@
       filter: brightness(1.05);
     }
 
+    .confirm-modal-card input[type="password"] {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font: inherit;
+      margin: 4px 0 12px;
+    }
+
+    .confirm-modal-error {
+      min-height: 1.3em;
+      margin: 0 0 8px;
+      color: #dc2626;
+      font-size: var(--text-sm);
+    }
+
     .board-wrap {
       overflow-x: hidden;
       overflow-y: auto;
@@ -1866,6 +1883,11 @@
               <label for="githubBranch">Branch</label>
               <input id="githubBranch" type="text" value="main" spellcheck="false" />
             </div>
+            <div class="field">
+              <label for="adminPassword">&#31649;&#29702;&#12497;&#12473;&#12527;&#12540;&#12489;</label>
+              <input id="adminPassword" type="password" value="" placeholder="&#22793;&#26356;&#12377;&#12427;&#12392;&#12365;&#12384;&#12369;&#20837;&#21147;" autocomplete="new-password" spellcheck="false" />
+              <span class="hint">&#22823;&#20250;&#19968;&#35239;&#12363;&#12425;&#32232;&#38598;&#12377;&#12427;&#12392;&#12365;&#12395;&#24517;&#35201;&#12391;&#12377;</span>
+            </div>
             <div class="controls-event-actions">
               <button type="button" id="githubSettingsSaveBtn" class="btn-secondary">Token &#12434;&#35373;&#23450;</button>
             </div>
@@ -1937,6 +1959,20 @@
       <div class="confirm-modal-actions">
         <button type="button" class="btn-secondary" id="deleteConfirmCancelBtn">キャンセル</button>
         <button type="button" class="confirm-modal-delete" id="deleteConfirmOkBtn">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-modal editor-only" id="adminUnlockModal" aria-hidden="true">
+    <div class="confirm-modal-card" role="dialog" aria-labelledby="adminUnlockTitle" aria-modal="true">
+      <h2 id="adminUnlockTitle">&#32232;&#38598;&#12525;&#12483;&#12463;</h2>
+      <p>&#22823;&#20250;&#12398;&#32232;&#38598;&#12395;&#12399;&#31649;&#29702;&#12497;&#12473;&#12527;&#12540;&#12489;&#12364;&#24517;&#35201;&#12391;&#12377;&#12290;</p>
+      <label for="adminUnlockInput">&#31649;&#29702;&#12497;&#12473;&#12527;&#12540;&#12489;</label>
+      <input id="adminUnlockInput" type="password" value="" autocomplete="current-password" />
+      <p class="confirm-modal-error" id="adminUnlockError"></p>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn-secondary" id="adminUnlockCancelBtn">&#12461;&#12515;&#12531;&#12475;&#12523;</button>
+        <button type="button" class="btn-primary" id="adminUnlockOkBtn">&#12525;&#12483;&#12463;&#35299;&#38500;</button>
       </div>
     </div>
   </div>
@@ -2053,6 +2089,10 @@
     const PUBLISHED_JSON_PATH = "published/timetable.json";
     const EVENTS_JSON_PATH = "events.json";
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
+    const ADMIN_UNLOCK_KEY = "tournamentAdminUnlocked";
+    const ADMIN_PASSWORD_SALT = "tournament-timetable.admin.v1";
+    const FALLBACK_ADMIN_PASSWORD_HASH =
+      "a851a9b49b9c81477976e5c685d8485ed75f47d2b55f0a135b91423ef8d9a2af";
     const SHARED_EVENTS_NTFY_URL = "https://ntfy.sh/tournament-timetable-taka13music-events";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
@@ -2063,7 +2103,120 @@
     let viewerAppliedSavedAt = "";
     let viewerSyncChannel = null;
 
-    let eventRegistry = { version: 1, events: [], selectedId: null, deleted: [] };
+    let eventRegistry = { version: 1, events: [], selectedId: null, deleted: [], adminPasswordHash: "" };
+    let adminUnlockWaiters = [];
+
+    function normalizeAdminPasswordHash(value) {
+      const hash = String(value || "").trim().toLowerCase();
+      return /^[a-f0-9]{64}$/.test(hash) ? hash : "";
+    }
+
+    function pickAdminPasswordHash(...sources) {
+      for (const source of sources) {
+        const hash = normalizeAdminPasswordHash(
+          source && typeof source === "object" ? source.adminPasswordHash : source
+        );
+        if (hash) return hash;
+      }
+      return FALLBACK_ADMIN_PASSWORD_HASH;
+    }
+
+    async function hashAdminPassword(password) {
+      const text = `${ADMIN_PASSWORD_SALT}\n${String(password || "")}`;
+      const bytes = new TextEncoder().encode(text);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function getAdminPasswordHash() {
+      return pickAdminPasswordHash(eventRegistry);
+    }
+
+    function isAdminUnlocked() {
+      if (IS_VIEWER_MODE) return true;
+      try {
+        return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === getAdminPasswordHash();
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function markAdminUnlocked() {
+      try {
+        sessionStorage.setItem(ADMIN_UNLOCK_KEY, getAdminPasswordHash());
+      } catch (_) {}
+    }
+
+    function openAdminUnlockModal() {
+      const modal = $("adminUnlockModal");
+      const input = $("adminUnlockInput");
+      const error = $("adminUnlockError");
+      if (error) error.textContent = "";
+      if (input) input.value = "";
+      if (modal) {
+        modal.classList.add("visible");
+        modal.setAttribute("aria-hidden", "false");
+      }
+      setTimeout(() => input?.focus(), 0);
+    }
+
+    function closeAdminUnlockModal() {
+      const modal = $("adminUnlockModal");
+      if (!modal) return;
+      modal.classList.remove("visible");
+      modal.setAttribute("aria-hidden", "true");
+      const input = $("adminUnlockInput");
+      if (input) input.value = "";
+    }
+
+    function finishAdminUnlock(ok) {
+      const waiters = adminUnlockWaiters;
+      adminUnlockWaiters = [];
+      closeAdminUnlockModal();
+      waiters.forEach((resolve) => resolve(ok));
+    }
+
+    function ensureAdminUnlocked() {
+      if (IS_VIEWER_MODE || isAdminUnlocked()) return Promise.resolve(true);
+      return new Promise((resolve) => {
+        adminUnlockWaiters.push(resolve);
+        openAdminUnlockModal();
+      });
+    }
+
+    async function submitAdminUnlock() {
+      const password = String($("adminUnlockInput")?.value || "");
+      const error = $("adminUnlockError");
+      if (!password) {
+        if (error) error.textContent = "パスワードを入力してください";
+        $("adminUnlockInput")?.focus();
+        return;
+      }
+      const hash = await hashAdminPassword(password);
+      if (hash !== getAdminPasswordHash()) {
+        if (error) error.textContent = "パスワードが違います";
+        $("adminUnlockInput")?.select();
+        return;
+      }
+      markAdminUnlocked();
+      finishAdminUnlock(true);
+    }
+
+    async function saveAdminPasswordFromForm() {
+      const password = String($("adminPassword")?.value || "");
+      if (!password) return false;
+      if (!isAdminUnlocked()) {
+        setStatus("管理パスワードを変更するには、先にロックを解除してください", true);
+        return false;
+      }
+      const hash = await hashAdminPassword(password);
+      eventRegistry.adminPasswordHash = hash;
+      persistEventRegistry();
+      markAdminUnlocked();
+      if ($("adminPassword")) $("adminPassword").value = "";
+      maybeSaveEventsRegistryToGithub();
+      return true;
+    }
 
     function normalizeEventSlug(raw) {
       return String(raw || "")
@@ -2343,6 +2496,19 @@
       if (IS_VIEWER_MODE) return;
       const route = parseEditorHash();
       if (route.view === "event" && route.eventId) {
+        if (!isAdminUnlocked()) {
+          showEditorView("list");
+          renderEventList();
+          const unlocked = await ensureAdminUnlocked();
+          if (!unlocked) {
+            if (location.hash && location.hash !== "#/" && location.hash !== "#") {
+              history.replaceState(null, "", `${location.pathname}${location.search}#/`);
+            }
+            showEditorView("list");
+            renderEventList();
+            return;
+          }
+        }
         const exists = eventRegistry.events.some((event) => event.id === route.eventId);
         if (!exists) {
           if (!skipHashWrite) setEditorHash("list");
@@ -2381,7 +2547,8 @@
       renderEventList();
     }
 
-    function openEventDetail(eventId) {
+    async function openEventDetail(eventId) {
+      if (!(await ensureAdminUnlocked())) return;
       setEditorHash("event", eventId);
     }
 
@@ -2394,7 +2561,8 @@
       setStatus("");
     }
 
-    function createNewEventAndOpen() {
+    async function createNewEventAndOpen() {
+      if (!(await ensureAdminUnlocked())) return;
       const event = createEmptyEvent({
         name: "新しい大会",
         sheetUrl: "",
@@ -2793,7 +2961,8 @@
             version: 1,
             events: eventRegistry.events,
             selectedId: eventRegistry.selectedId,
-            deleted: eventRegistry.deleted || []
+            deleted: eventRegistry.deleted || [],
+            adminPasswordHash: getAdminPasswordHash()
           })
         );
       } catch (_) {}
@@ -3175,7 +3344,8 @@
           version: 1,
           events: parsed.events.map((event) => createEmptyEvent(event)),
           selectedId: parsed.selectedId || null,
-          deleted: mergeDeletedRecords(parsed.deleted)
+          deleted: mergeDeletedRecords(parsed.deleted),
+          adminPasswordHash: pickAdminPasswordHash(parsed)
         };
       } catch (_) {
         return null;
@@ -3189,7 +3359,9 @@
         version: 1,
         events: data.events.map((event) => createEmptyEvent(event)),
         selectedId: data.selectedId || null,
-        deleted: mergeDeletedRecords(data.deleted)
+        deleted: mergeDeletedRecords(data.deleted),
+        adminPasswordHash: pickAdminPasswordHash(data)
+      };
       };
     }
 
@@ -3425,7 +3597,8 @@
         version: 1,
         events,
         selectedId,
-        deleted: mergeDeletedRecords(base?.deleted, overlay?.deleted)
+        deleted: mergeDeletedRecords(base?.deleted, overlay?.deleted),
+        adminPasswordHash: pickAdminPasswordHash(overlay, base, eventRegistry)
       };
     }
 
@@ -3596,7 +3769,8 @@
             sheetEnd: event.sheetEnd,
             updatedAt: eventUpdatedAt(event) || undefined
           })),
-          deleted: mergeDeletedRecords(eventRegistry.deleted)
+          deleted: mergeDeletedRecords(eventRegistry.deleted),
+          adminPasswordHash: getAdminPasswordHash()
         },
         null,
         2
@@ -3651,9 +3825,27 @@
       $("deleteConfirmModal")?.addEventListener("click", (event) => {
         if (event.target === $("deleteConfirmModal")) closeDeleteConfirm();
       });
+      $("adminUnlockCancelBtn")?.addEventListener("click", () => finishAdminUnlock(false));
+      $("adminUnlockOkBtn")?.addEventListener("click", () => {
+        submitAdminUnlock().catch((err) => console.warn(err));
+      });
+      $("adminUnlockInput")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitAdminUnlock().catch((err) => console.warn(err));
+        }
+      });
+      $("adminUnlockModal")?.addEventListener("click", (event) => {
+        if (event.target === $("adminUnlockModal")) finishAdminUnlock(false);
+      });
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && $("deleteConfirmModal")?.classList.contains("visible")) {
+        if (event.key !== "Escape") return;
+        if ($("deleteConfirmModal")?.classList.contains("visible")) {
           closeDeleteConfirm();
+          return;
+        }
+        if ($("adminUnlockModal")?.classList.contains("visible")) {
+          finishAdminUnlock(false);
         }
       });
       $("eventName")?.addEventListener("input", () => {
@@ -4817,7 +5009,18 @@
       $("githubSettingsSaveBtn")?.addEventListener("click", async () => {
         const settings = saveGithubSettingsFromForm({ announce: true });
         applyGithubSettingsToForm(settings);
+        const passwordChanged = await saveAdminPasswordFromForm();
+        if (passwordChanged) {
+          setStatus("管理パスワードを変更しました");
+          showToast("管理パスワードを変更しました");
+        }
         if (!settings.token || !Object.keys(tournamentsByDay).length) return;
+        try {
+          await maybeSaveSharedDataAfterLoad({ announceSuccess: true });
+        } catch (err) {
+          setStatus(`自動保存に失敗しました: ${err.message || err}`, true);
+        }
+      });
         try {
           await maybeSaveSharedDataAfterLoad({ announceSuccess: true });
         } catch (err) {
