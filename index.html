@@ -602,11 +602,16 @@
     }
 
     .meta-row {
-      display: flex;
+      display: none;
       flex-wrap: wrap;
       align-items: center;
       gap: 10px;
       margin-bottom: 12px;
+    }
+
+    body.editor-view-event .meta-row:not(.is-empty),
+    body.viewer-mode .meta-row:not(.is-empty) {
+      display: flex;
     }
 
     .meta-row-actions {
@@ -626,6 +631,10 @@
       white-space: nowrap;
     }
 
+    .hour-height-control > .hour-height-label-short {
+      display: none;
+    }
+
     .hour-height-control input {
       width: 64px;
       border: 1px solid var(--border);
@@ -634,6 +643,14 @@
       font: inherit;
       font-size: var(--text-sm);
       background: #fff;
+    }
+
+    .meta-row.is-empty {
+      display: none;
+    }
+
+    .meta-row.no-actions .meta-row-actions {
+      display: none;
     }
 
     .day-tabs-wrap {
@@ -1810,7 +1827,7 @@
   </script>
   <script src="viewer-deploy.js"></script>
 </head>
-<body>
+<body class="editor-view-list">
   <div class="app">
     <header class="page-header">
       <div>
@@ -1922,7 +1939,7 @@
       </div>
     </div>
 
-    <div class="meta-row">
+    <div class="meta-row is-empty no-actions">
       <div class="day-tabs-wrap">
         <div class="day-tabs surface" id="dayTabs"></div>
         <select id="dayTabsSelect" class="day-tabs-select surface" aria-label="&#26085;&#20184;&#12434;&#36984;&#25246;"></select>
@@ -2312,9 +2329,37 @@
     function eventMatchesDeleted(event, deleted) {
       const id = event?.id;
       const slug = normalizeEventSlug(event?.slug || event?.name);
-      return (deleted || []).some(
-        (rec) => (id && rec.id && rec.id === id) || (slug && rec.slug && rec.slug === slug)
+      const eventTs = eventUpdatedAt(event);
+      return (deleted || []).some((rec) => {
+        const match = (id && rec.id && rec.id === id) || (slug && rec.slug && rec.slug === slug);
+        if (!match) return false;
+        const tombTs = Number(rec.t) || 0;
+        if (eventTs && tombTs && tombTs < eventTs) return false;
+        return true;
+      });
+    }
+
+    function restorePublishedEvents(registry, published) {
+      if (!published?.events?.length) return registry;
+      const byId = new Map((registry?.events || []).map((event) => [event.id, event]));
+      for (const raw of published.events) {
+        const event = createEmptyEvent(raw);
+        if (event.id) byId.set(event.id, mergeEventPair(byId.get(event.id) || event, event));
+      }
+      const liveIds = new Set(published.events.map((event) => event.id).filter(Boolean));
+      const liveSlugs = new Set(
+        published.events.map((event) => normalizeEventSlug(event.slug || event.name)).filter(Boolean)
       );
+      const deleted = (registry?.deleted || []).filter((rec) => {
+        if (rec.id && liveIds.has(rec.id)) return false;
+        if (rec.slug && liveSlugs.has(rec.slug)) return false;
+        return true;
+      });
+      return {
+        ...registry,
+        events: [...byId.values()],
+        deleted
+      };
     }
 
     function filterDeletedEvents(events, deleted) {
@@ -3365,7 +3410,6 @@
         deleted: mergeDeletedRecords(data.deleted),
         adminPasswordHash: pickAdminPasswordHash(data)
       };
-      };
     }
 
     function isSharedSheetUrl(url) {
@@ -3519,12 +3563,16 @@
         fromStorage?.deleted
       );
       merged = applySharedEventUpdates(merged, fromNtfy);
+      merged = restorePublishedEvents(merged, fromFile);
+      if (!fromFile && !merged.events.length && (eventRegistry.events || []).length) {
+        return eventRegistry;
+      }
       if (selectedId && merged.events.some((event) => event.id === selectedId)) {
         merged.selectedId = selectedId;
       }
       eventRegistry = merged;
       persistEventRegistry();
-      if (render && snapshot !== JSON.stringify({ events: eventRegistry.events || [], deleted: eventRegistry.deleted || [] })) {
+      if (render) {
         renderEventList();
         closeDeletedSelectedEvent(selectedId);
         const selected = getSelectedEvent();
@@ -5018,12 +5066,6 @@
           showToast("管理パスワードを変更しました");
         }
         if (!settings.token || !Object.keys(tournamentsByDay).length) return;
-        try {
-          await maybeSaveSharedDataAfterLoad({ announceSuccess: true });
-        } catch (err) {
-          setStatus(`自動保存に失敗しました: ${err.message || err}`, true);
-        }
-      });
         try {
           await maybeSaveSharedDataAfterLoad({ announceSuccess: true });
         } catch (err) {
@@ -8560,6 +8602,7 @@
           select.hidden = true;
           suppressDaySelectChange = false;
         }
+        syncMetaRowChrome();
         return;
       }
 
@@ -8587,6 +8630,7 @@
         bindDayTabsSelect(select);
         select.onchange = () => onDayTabsSelectChange(select);
       }
+      syncMetaRowChrome();
     }
 
     function renderBoard() {
@@ -8767,6 +8811,15 @@
       const copyBtn = $("copyTimetableBtn");
       if (exportBtn) exportBtn.disabled = !enabled;
       if (copyBtn) copyBtn.disabled = !enabled;
+      syncMetaRowChrome(enabled);
+    }
+
+    function syncMetaRowChrome(hasBoard = Object.keys(tournamentsByDay || {}).length > 0) {
+      const meta = document.querySelector(".meta-row");
+      if (!meta) return;
+      const hasDays = (dayTabItems || []).length > 0;
+      meta.classList.toggle("is-empty", !hasDays && !hasBoard);
+      meta.classList.toggle("no-actions", !hasBoard);
     }
 
     function buildSvgExportFilename() {
