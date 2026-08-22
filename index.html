@@ -2004,6 +2004,27 @@
       return slug;
     }
 
+    function normalizeSlugAliasList(aliases, currentSlug) {
+      const current = normalizeEventSlug(currentSlug);
+      const seen = new Set();
+      const out = [];
+      for (const raw of aliases || []) {
+        const slug = normalizeEventSlug(raw);
+        if (!slug || slug === current || seen.has(slug)) continue;
+        seen.add(slug);
+        out.push(slug);
+      }
+      return out.slice(-20);
+    }
+
+    function rememberSlugAlias(event, previousSlug) {
+      if (!event) return;
+      event.slugAliases = normalizeSlugAliasList(
+        [...(event.slugAliases || []), previousSlug],
+        event.slug
+      );
+    }
+
     function createEventId() {
       if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
       return `evt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -2072,6 +2093,7 @@
         id: partial.id || createEventId(),
         name,
         slug,
+        slugAliases: normalizeSlugAliasList(partial.slugAliases, slug),
         sheetUrl: String(partial.sheetUrl || "").trim(),
         sheetStart: String(partial.sheetStart || "").trim(),
         sheetEnd: String(partial.sheetEnd || "").trim(),
@@ -2102,11 +2124,8 @@
       };
     }
 
-    function resolveStableEventSlug(event, name) {
-      if (event?.slug && !isPlaceholderEventSlug(event.slug)) {
-        return normalizeEventSlug(event.slug);
-      }
-      return uniqueEventSlug(name, event?.id || eventRegistry.selectedId);
+    function resolveEventSlugFromName(event, name) {
+      return uniqueEventSlug(name || event?.name, event?.id || eventRegistry.selectedId);
     }
 
     function applyEventToForm(event) {
@@ -2133,7 +2152,7 @@
       const current = event || getSelectedEvent();
       const name = current?.name || $("eventName")?.value || "";
       if (!String(name).trim() && !current?.slug) return "";
-      const slug = resolveStableEventSlug(current, name);
+      const slug = resolveEventSlugFromName(current, name);
       if (!slug) return "";
       return `${getViewerSiteOrigin()}/e/${encodeURIComponent(slug)}`;
     }
@@ -2674,7 +2693,7 @@
       if (!selected) return null;
       const values = readEventFormValues();
       selected.name = values.name || selected.name || "無題の大会";
-      selected.slug = resolveStableEventSlug(selected, selected.name);
+      selected.slug = resolveEventSlugFromName(selected, selected.name);
       selected.sheetUrl = values.sheetUrl;
       selected.sheetStart = values.sheetStart;
       selected.sheetEnd = values.sheetEnd;
@@ -3164,6 +3183,7 @@
             id: event.id,
             name: event.name || slug,
             slug,
+            slugAliases: normalizeSlugAliasList(event.slugAliases, slug),
             sheetUrl: event.sheetUrl,
             sheetStart: event.sheetStart || "",
             sheetEnd: event.sheetEnd || "",
@@ -3265,6 +3285,12 @@
         id: existing.id || incoming.id,
         name: newer.name || older.name,
         slug,
+        slugAliases: [
+          ...(Array.isArray(newer.slugAliases) ? newer.slugAliases : []),
+          ...(Array.isArray(older.slugAliases) ? older.slugAliases : []),
+          older.slug,
+          newer.slug
+        ],
         sheetUrl: newer.sheetUrl || older.sheetUrl,
         sheetStart: newer.sheetStart || older.sheetStart,
         sheetEnd: newer.sheetEnd || older.sheetEnd,
@@ -3365,14 +3391,22 @@
           $("eventName")?.focus();
           return null;
         }
-        selected.slug = resolveStableEventSlug(selected, selected.name);
+        selected.slug = resolveEventSlugFromName(selected, selected.name);
         selected.updatedAt = Date.now();
       }
       applyEventToForm(selected);
       renderEventList();
       persistEventRegistry();
       if (previousSlug && previousSlug !== selected.slug) {
-        publishSharedEventRecord({ slug: previousSlug, id: selected.id }, { deleted: true }).catch(() => {});
+        rememberSlugAlias(selected, previousSlug);
+        eventRegistry.deleted = mergeDeletedRecords(eventRegistry.deleted, [
+          normalizeDeletedRecord({ slug: previousSlug, t: Date.now() })
+        ]);
+        persistEventRegistry();
+        publishSharedEventRecord({ slug: previousSlug }, { deleted: true }).catch(() => {});
+        if (Object.keys(tournamentsByDay).length) {
+          persistTimetableCache(selected.id).catch(() => {});
+        }
       }
       if (announce) {
         const viewUrl = buildEventViewUrl(selected);
@@ -3429,6 +3463,7 @@
             id: event.id,
             name: event.name,
             slug: event.slug,
+            slugAliases: normalizeSlugAliasList(event.slugAliases, event.slug),
             sheetUrl: event.sheetUrl,
             sheetStart: event.sheetStart,
             sheetEnd: event.sheetEnd,
@@ -4361,14 +4396,18 @@
       );
     }
 
+    function eventHasSlug(event, slug) {
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized || !event) return false;
+      if (normalizeEventSlug(event.slug) === normalized) return true;
+      if (normalizeEventSlug(event.name) === normalized) return true;
+      return (event.slugAliases || []).some((alias) => normalizeEventSlug(alias) === normalized);
+    }
+
     function findEventBySlug(slug, registry = eventRegistry) {
       const normalized = normalizeEventSlug(slug);
       if (!normalized) return null;
-      return (registry?.events || []).find(
-        (event) =>
-          normalizeEventSlug(event.slug) === normalized ||
-          normalizeEventSlug(event.name) === normalized
-      ) || null;
+      return (registry?.events || []).find((event) => eventHasSlug(event, normalized)) || null;
     }
 
     async function lookupSharedEventBySlug(slug) {
@@ -4382,11 +4421,7 @@
       try {
         const updates = await fetchNtfySharedUpdates();
         return (
-          (updates.upserts || []).find(
-            (item) =>
-              normalizeEventSlug(item.slug) === normalized ||
-              normalizeEventSlug(item.name) === normalized
-          ) || null
+          (updates.upserts || []).find((item) => eventHasSlug(item, normalized)) || null
         );
       } catch (_) {}
       return null;
@@ -4471,11 +4506,7 @@
       let event = findEventBySlug(slug, registry);
       if (!event) {
         const updates = await fetchNtfySharedUpdates();
-        event = (updates.upserts || []).find(
-          (item) =>
-            normalizeEventSlug(item.slug) === normalizeEventSlug(slug) ||
-            normalizeEventSlug(item.name) === normalizeEventSlug(slug)
-        );
+        event = (updates.upserts || []).find((item) => eventHasSlug(item, slug));
       }
       return eventToViewerSheetConfig(event);
     }
@@ -4538,6 +4569,13 @@
           setStatus("読み込み中...");
           decoded = await loadPublishedJsonPayload("", { bypassCache: true });
         } else {
+          const requestedSlug = normalizeEventSlug(pValue);
+          const mapped = requestedSlug ? await lookupSharedEventBySlug(requestedSlug) : null;
+          const currentSlug = normalizeEventSlug(mapped?.slug);
+          if (currentSlug && currentSlug !== requestedSlug) {
+            location.replace(`/e/${encodeURIComponent(currentSlug)}`);
+            return;
+          }
           paintedFromCache = await tryPaintViewerFromCache(pValue || "");
           if (!paintedFromCache) setStatus("読み込み中...");
           try {
