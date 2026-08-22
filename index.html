@@ -1032,6 +1032,77 @@
       background: #9f1239;
     }
 
+    .confirm-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 1200;
+    }
+
+    .confirm-modal.visible {
+      display: flex;
+    }
+
+    .confirm-modal-card {
+      width: min(440px, 100%);
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 20px 22px;
+    }
+
+    .confirm-modal-card h2 {
+      font-size: 16px;
+      margin: 0 0 10px;
+      color: #9f1239;
+    }
+
+    .confirm-modal-card p {
+      margin: 0 0 10px;
+      font-size: var(--text-sm);
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .confirm-modal-warning {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: #fff1f2;
+      border: 1px solid rgba(190, 18, 60, 0.22);
+      color: #9f1239;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      line-height: 1.6;
+    }
+
+    .confirm-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .confirm-modal-delete {
+      border: 1px solid #be123c;
+      background: #be123c;
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font: inherit;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      cursor: pointer;
+    }
+
+    .confirm-modal-delete:hover {
+      filter: brightness(1.05);
+    }
+
     .board-wrap {
       overflow-x: hidden;
       overflow-y: auto;
@@ -1857,6 +1928,18 @@
   </div>
 
   <div id="appToast" class="app-toast" role="status" aria-live="polite"></div>
+
+  <div class="confirm-modal editor-only" id="deleteConfirmModal" aria-hidden="true">
+    <div class="confirm-modal-card" role="dialog" aria-labelledby="deleteConfirmTitle" aria-modal="true">
+      <h2 id="deleteConfirmTitle">大会を削除しますか？</h2>
+      <p id="deleteConfirmDesc"></p>
+      <p class="confirm-modal-warning">この操作は取り消せません。閲覧用URLも使えなくなり、他の端末からも消えます。</p>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn-secondary" id="deleteConfirmCancelBtn">キャンセル</button>
+        <button type="button" class="confirm-modal-delete" id="deleteConfirmOkBtn">削除する</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const APP_MODE = (() => {
@@ -3432,13 +3515,16 @@
       return selected;
     }
 
-    function deleteEventById(eventId) {
+    function deleteEventById(eventId, { confirmed = false } = {}) {
       const target = eventRegistry.events.find((event) => event.id === eventId);
       if (!target) {
         setStatus("削除する大会がありません", true);
         return;
       }
-      if (!confirm(`大会「${target.name || target.slug}」を削除しますか？`)) return;
+      if (!confirmed) {
+        openDeleteConfirm(target);
+        return;
+      }
       eventRegistry.events = eventRegistry.events.filter((event) => event.id !== target.id);
       if (eventRegistry.selectedId === target.id) {
         eventRegistry.selectedId = eventRegistry.events[0]?.id || null;
@@ -3458,6 +3544,31 @@
         setEditorHash("list");
       }
       setStatus(`大会「${target.name || target.slug}」を削除しました`);
+      showToast("大会を削除しました");
+    }
+
+    let pendingDeleteEventId = null;
+
+    function openDeleteConfirm(event) {
+      pendingDeleteEventId = event?.id || null;
+      const modal = $("deleteConfirmModal");
+      const desc = $("deleteConfirmDesc");
+      if (desc) {
+        desc.textContent = `大会「${event?.name || event?.slug || "無題の大会"}」を削除しようとしています。`;
+      }
+      if (modal) {
+        modal.classList.add("visible");
+        modal.setAttribute("aria-hidden", "false");
+      }
+      $("deleteConfirmCancelBtn")?.focus();
+    }
+
+    function closeDeleteConfirm() {
+      pendingDeleteEventId = null;
+      const modal = $("deleteConfirmModal");
+      if (!modal) return;
+      modal.classList.remove("visible");
+      modal.setAttribute("aria-hidden", "true");
     }
 
     function deleteSelectedEvent() {
@@ -3531,6 +3642,20 @@
         copySelectedEventViewUrl();
       });
       $("eventDeleteBtn")?.addEventListener("click", deleteSelectedEvent);
+      $("deleteConfirmCancelBtn")?.addEventListener("click", closeDeleteConfirm);
+      $("deleteConfirmOkBtn")?.addEventListener("click", () => {
+        const eventId = pendingDeleteEventId;
+        closeDeleteConfirm();
+        if (eventId) deleteEventById(eventId, { confirmed: true });
+      });
+      $("deleteConfirmModal")?.addEventListener("click", (event) => {
+        if (event.target === $("deleteConfirmModal")) closeDeleteConfirm();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && $("deleteConfirmModal")?.classList.contains("visible")) {
+          closeDeleteConfirm();
+        }
+      });
       $("eventName")?.addEventListener("input", () => {
         const selected = getSelectedEvent();
         const typedName = String($("eventName")?.value || "").trim();
