@@ -1002,6 +1002,36 @@
     .status.error { color: #dc2626; }
     .status.loading { color: #4338ca; font-weight: var(--font-semibold); }
 
+    .app-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(10px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1100;
+      max-width: min(92vw, 420px);
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #312e81;
+      color: #fff;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      line-height: 1.4;
+      text-align: center;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .app-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .app-toast.error {
+      background: #9f1239;
+    }
+
     .board-wrap {
       overflow-x: hidden;
       overflow-y: auto;
@@ -1655,131 +1685,6 @@
       color: #5b52d6;
     }
 
-    .publish-modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(15, 23, 42, 0.45);
-      z-index: 1000;
-    }
-
-    .publish-modal.visible {
-      display: flex;
-    }
-
-    .publish-modal-card {
-      width: min(640px, 100%);
-      max-height: min(88vh, 900px);
-      overflow-y: auto;
-      background: #fff;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-md);
-      padding: 18px 20px;
-    }
-
-    .publish-modal-card h2 {
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-
-    .publish-modal-card p {
-      font-size: var(--text-sm);
-      color: var(--muted);
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    .publish-modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    .publish-steps {
-      margin: 0 0 14px 18px;
-      padding: 0;
-      color: var(--text);
-      font-size: var(--text-sm);
-      line-height: 1.65;
-    }
-
-    .publish-steps li {
-      margin-bottom: 10px;
-    }
-
-    .publish-steps li:last-child {
-      margin-bottom: 0;
-    }
-
-    .publish-modal-desc {
-      font-size: var(--text-sm);
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    .publish-steps-note {
-      display: inline-block;
-      margin-top: 4px;
-      color: #64748b;
-      font-size: var(--text-xs);
-    }
-
-    .publish-steps code {
-      font-size: var(--text-xs);
-      background: #f1f5f9;
-      padding: 1px 5px;
-      border-radius: 4px;
-    }
-
-    .publish-deploy-block {
-      margin: 0 0 14px;
-      padding: 12px 14px;
-      background: #f8fafc;
-      border: 1px solid #dbe3ef;
-      border-radius: 8px;
-    }
-
-    .publish-deploy-block-title {
-      margin: 0 0 8px;
-      font-size: var(--text-sm);
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .publish-deploy-block .publish-steps {
-      margin-bottom: 0;
-    }
-
-    .publish-note-block {
-      margin: 0 0 14px;
-      padding: 12px 14px;
-      background: #fffbeb;
-      border: 1px solid #f0e4b8;
-      border-radius: 8px;
-      font-size: var(--text-sm);
-      line-height: 1.65;
-      color: var(--text);
-    }
-
-    .publish-note-block-title {
-      margin: 0 0 8px;
-      font-size: var(--text-sm);
-      font-weight: 700;
-    }
-
-    .publish-note-block p {
-      margin: 0 0 8px;
-    }
-
-    .publish-note-block p:last-child {
-      margin-bottom: 0;
-    }
-
     @media (min-width: 769px) {
       body.viewer-mode .board-wrap {
         overflow-y: auto;
@@ -1951,24 +1856,7 @@
     </div>
   </div>
 
-  <div class="publish-modal editor-only" id="publishModal" aria-hidden="true">
-    <div class="publish-modal-card" role="dialog" aria-labelledby="publishModalTitle">
-      <h2 id="publishModalTitle">&#20844;&#38283;&#12375;&#12414;&#12375;&#12383;</h2>
-      <p id="publishModalDesc" class="publish-modal-desc"></p>
-      <div class="publish-result-url" id="publishResultUrlWrap" hidden>
-        <code id="publishResultUrl"></code>
-        <button type="button" class="btn-secondary" id="publishCopyViewUrlBtn">URL&#12434;&#12467;&#12500;&#12540;</button>
-        <a class="btn-primary" id="publishOpenViewLink" href="#" target="_blank" rel="noopener noreferrer">&#38322;&#35239;&#12434;&#38283;&#12367;</a>
-      </div>
-      <div class="publish-deploy-block" id="publishWorkflowBlock">
-        <p class="publish-deploy-block-title">&#20844;&#38283;&#12398;&#27969;&#12428;</p>
-        <ol class="publish-steps" id="publishWorkflowSteps"></ol>
-      </div>
-      <div class="publish-modal-actions">
-        <button type="button" class="btn-secondary" id="closePublishModalBtn">&#38281;&#12376;&#12427;</button>
-      </div>
-    </div>
-  </div>
+  <div id="appToast" class="app-toast" role="status" aria-live="polite"></div>
 
   <script>
     const APP_MODE = (() => {
@@ -2063,6 +1951,19 @@
       el.textContent = msg;
       el.classList.toggle("error", isError);
       el.classList.toggle("loading", LOADING_STATUS_RE.test(String(msg || "").trim()));
+    }
+
+    let toastTimer = null;
+    function showToast(message, { error = false, duration = 3200 } = {}) {
+      const el = $("appToast");
+      if (!el || !message) return;
+      el.textContent = message;
+      el.classList.toggle("error", error);
+      el.classList.add("visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.remove("visible");
+      }, duration);
     }
 
     const EDITOR_SITE_ORIGIN = "https://tournament-timetable.surge.sh";
@@ -2336,7 +2237,7 @@
       renderEventList();
     }
 
-    async function applyEditorRoute({ skipHashWrite = false, autoLoad = true } = {}) {
+    async function applyEditorRoute({ skipHashWrite = false } = {}) {
       if (IS_VIEWER_MODE) return;
       const route = parseEditorHash();
       if (route.view === "event" && route.eventId) {
@@ -2356,38 +2257,21 @@
 
         const restored = await tryRestoreTimetableCache(route.eventId);
         if (restored) {
-          const when = formatTimetableCacheSavedAt(restored.savedAt);
-          setStatus(
-            when
-              ? `保存済みのタイムテーブルを表示しています（${when}）。最新にするには「更新」を押してください。`
-              : "保存済みのタイムテーブルを表示しています。最新にするには「更新」を押してください。"
-          );
+          notifyCachedTimetable(restored.savedAt);
           return;
         }
 
         const published = await tryRestorePublishedTimetable(getSelectedEvent());
         if (published) {
-          const when = formatTimetableCacheSavedAt(published.publishedAt);
-          setStatus(
-            when
-              ? `他の端末で保存されたタイムテーブルを表示しています（${when}）。最新にするには「更新」を押してください。`
-              : "他の端末で保存されたタイムテーブルを表示しています。最新にするには「更新」を押してください。"
-          );
+          notifyCachedTimetable(published.publishedAt, { fromOtherDevice: true });
           return;
         }
 
-        if (autoLoad && String($("sheetUrl")?.value || "").trim()) {
-          try {
-            await refreshTimetable();
-          } catch (err) {
-            setStatus(formatFetchError(err), true);
-          }
-        } else if (!String($("sheetUrl")?.value || "").trim()) {
-          const board = $("board");
-          if (board && board.classList.contains("empty")) {
-            board.innerHTML =
-              "シート設定を入力して「公開」を押すと、タイムテーブルが表示されます。";
-          }
+        const board = $("board");
+        if (board && board.classList.contains("empty")) {
+          board.innerHTML = String($("sheetUrl")?.value || "").trim()
+            ? "保存済みのタイムテーブルがありません。「公開」で読み込んでください。最新にするときは「更新」を使います。"
+            : "シート設定を入力して「公開」を押すと、タイムテーブルが表示されます。";
         }
         return;
       }
@@ -2686,39 +2570,6 @@
       return true;
     }
 
-    function showAppPublishModal({ event, viewUrl, commitUrl, savedToServer = true }) {
-      const modal = $("publishModal");
-      const name = escapeHtml(event?.name || event?.slug || "");
-      $("publishModalTitle").textContent = savedToServer ? "他の端末向けに保存しました" : "閲覧URLの準備ができました";
-      $("publishModalDesc").innerHTML = savedToServer
-        ? `大会「${name}」をサーバーに保存しました。<br>この閲覧URLを他の端末で開くと、同じタイムテーブルが表示されます。` +
-          (commitUrl
-            ? `<br><span class="publish-steps-note"><a href="${escapeHtml(commitUrl)}" target="_blank" rel="noopener noreferrer">保存内容を確認</a></span>`
-            : "")
-        : `大会「${name}」の閲覧URLです。<br>シート情報が含まれているので、他の端末でもこのURLから開けます。`;
-      $("publishWorkflowSteps").innerHTML = savedToServer
-        ? `
-        <li>管理画面で大会を「公開」する</li>
-        <li>サーバーへ自動保存される</li>
-        <li>同じ閲覧URLを他の端末で開く</li>
-      `
-        : `
-        <li>下の閲覧URLをコピーする</li>
-        <li>他の端末でそのURLを開く</li>
-        <li>大会一覧にも出す場合は Token を設定してから再公開</li>
-      `;
-      const wrap = $("publishResultUrlWrap");
-      const code = $("publishResultUrl");
-      const openLink = $("publishOpenViewLink");
-      if (wrap && code && openLink) {
-        wrap.hidden = !viewUrl;
-        code.textContent = viewUrl || "";
-        openLink.href = viewUrl || "#";
-      }
-      modal.classList.add("visible");
-      modal.setAttribute("aria-hidden", "false");
-    }
-
     async function saveSharedDataToGithub({ announce = true, skipBusy = false } = {}) {
       if (!Object.keys(tournamentsByDay).length) {
         throw new Error("保存するタイムテーブルがありません。先に「公開」で読み込んでください");
@@ -2750,11 +2601,8 @@
         }
         const viewUrl = buildEventViewUrl(event);
         if (announce) {
-          const commitUrl = `https://github.com/${settings.owner}/${settings.repo}/commits/${encodeURIComponent(settings.branch)}`;
-          showAppPublishModal({ event, viewUrl, commitUrl, savedToServer: true });
-          setStatus(
-            `保存しました。まもなく他の端末でも ${viewUrl} で閲覧できます`
-          );
+          showToast("他の端末向けに保存しました");
+          setStatus(`保存しました。まもなく他の端末でも ${viewUrl} で閲覧できます`);
         }
         return viewUrl;
       } finally {
@@ -2762,22 +2610,17 @@
       }
     }
 
-    async function maybeSaveSharedDataAfterLoad({ announceSuccess = false, showShareModal } = {}) {
+    async function maybeSaveSharedDataAfterLoad({ announceSuccess = false } = {}) {
       if (exportInProgress) return;
       const missingSheets = getMissingScheduledSheetNames();
       if (missingSheets.length) return;
       if (!Object.keys(tournamentsByDay).length) return;
 
-      const shouldShowModal = showShareModal ?? !announceSuccess;
       const event = saveCurrentEventFromForm({ announce: false }) || getSelectedEvent();
-      const viewUrl = buildEventViewUrl(event);
       const settings = loadGithubSettings();
       const previous = String($("status")?.textContent || "").trim();
       const shared = await publishSharedEventRecord(event);
       if (!settings.token) {
-        if (shouldShowModal) {
-          showAppPublishModal({ event, viewUrl, savedToServer: shared });
-        }
         setStatus(
           previous
             ? `${previous} / ${shared ? "他の端末向けに配信しました" : "他の端末への配信に失敗しました"}`
@@ -2791,7 +2634,6 @@
       try {
         await saveSharedDataToGithub({ announce: announceSuccess, skipBusy: !announceSuccess });
         if (!announceSuccess) {
-          if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: true });
           setStatus(
             previous
               ? `${previous} / 他の端末向けに自動保存しました`
@@ -2800,7 +2642,6 @@
         }
       } catch (err) {
         console.warn("shared save after load failed", err);
-        if (shouldShowModal) showAppPublishModal({ event, viewUrl, savedToServer: shared });
         setStatus(
           previous
             ? `${previous} / 自動保存に失敗しました: ${err.message || err}`
@@ -3191,6 +3032,33 @@
         hour: "2-digit",
         minute: "2-digit"
       });
+    }
+
+    const CACHE_STALE_MS = 5 * 60 * 1000;
+
+    function isCachedTimetableStale(savedAt) {
+      const t = new Date(savedAt).getTime();
+      if (!savedAt || Number.isNaN(t)) return true;
+      return Date.now() - t >= CACHE_STALE_MS;
+    }
+
+    function notifyCachedTimetable(savedAt, { fromOtherDevice = false } = {}) {
+      const when = formatTimetableCacheSavedAt(savedAt);
+      const prefix = fromOtherDevice
+        ? "他の端末で保存されたタイムテーブルを表示しています"
+        : "保存済みのタイムテーブルを表示しています";
+      setStatus(
+        when
+          ? `${prefix}（${when}）。最新にするには「更新」を押してください。`
+          : `${prefix}。最新にするには「更新」を押してください。`
+      );
+      if (!isCachedTimetableStale(savedAt)) return;
+      showToast(
+        when
+          ? `古いデータを表示しています（${when}）。「更新」で最新にできます`
+          : "古いデータを表示しています。「更新」で最新にできます",
+        { duration: 4500 }
+      );
     }
 
     function loadEventRegistryFromStorage() {
@@ -4423,12 +4291,6 @@
       return JSON.stringify(compact);
     }
 
-    function closePublishModal() {
-      const modal = $("publishModal");
-      modal.classList.remove("visible");
-      modal.setAttribute("aria-hidden", "true");
-    }
-
     async function loadPublishedJsonPayload(legacySlug, options = {}) {
       const slug = normalizeEventSlug(legacySlug);
       const bypassCache = !!options.bypassCache;
@@ -4789,23 +4651,6 @@
         }
       });
       $("openEventViewBtn")?.addEventListener("click", openSelectedEventView);
-      $("publishCopyViewUrlBtn")?.addEventListener("click", async () => {
-        const url = $("publishResultUrl")?.textContent?.trim();
-        if (!url) {
-          setStatus("コピーするURLがありません", true);
-          return;
-        }
-        try {
-          await copyTextToClipboard(url);
-          setStatus("閲覧URLをコピーしました");
-        } catch (err) {
-          setStatus(`コピーに失敗しました: ${err.message || err}`, true);
-        }
-      });
-      $("closePublishModalBtn").addEventListener("click", closePublishModal);
-      $("publishModal").addEventListener("click", (event) => {
-        if (event.target === $("publishModal")) closePublishModal();
-      });
       setPublishButtonState();
     }
 
@@ -9224,6 +9069,7 @@
           renderBoard();
           if (preserveState) finishOverlapRestore(savedState);
           setStatus("\u5909\u66f4\u306f\u3042\u308a\u307e\u305b\u3093\u3067\u3057\u305f");
+          showToast("変更はありませんでした");
           lastLoadContext = getLoadContextKey(url, "", "");
           await persistTimetableCache();
           return true;
@@ -9248,7 +9094,8 @@
             ? `\u66f4\u65b0\u5b8c\u4e86\uff08${result.changed ? "1\u4ef6\u5909\u66f4" : "\u5909\u66f4\u306a\u3057"}\u3001\u5408\u8a08 ${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
             : `\u8aad\u307f\u8fbc\u307f\u5b8c\u4e86\uff08${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
         );
-        await maybeSaveSharedDataAfterLoad({ showShareModal: !isIncremental });
+        if (isIncremental) showToast("差分更新が完了しました");
+        await maybeSaveSharedDataAfterLoad();
         return true;
       } catch (e) {
         setStatus(formatFetchError(e), true);
@@ -9716,6 +9563,7 @@
           setStatus(
             `\u5dee\u5206\u66f4\u65b0\u5b8c\u4e86\uff08\u5909\u66f4 ${changedCount}\u4ef6\u3001\u78ba\u8a8d ${checkedCount}\u4ef6\u3001\u672a\u78ba\u8a8d ${skippedCount}\u4ef6\u3001\u5408\u8a08 ${total} \u30c8\u30fc\u30ca\u30e1\u30f3\u30c8\uff09`
           );
+          showToast("差分更新が完了しました");
         } else {
           setStatus(
             "\u8aad\u307f\u8fbc\u307f\u5b8c\u4e86\uff08" +
@@ -9730,7 +9578,7 @@
           );
         }
         if (!failedSheets.length) {
-          await maybeSaveSharedDataAfterLoad({ showShareModal: !isIncremental });
+          await maybeSaveSharedDataAfterLoad();
         }
       } catch (e) {
         if (myGeneration === loadGeneration) {
