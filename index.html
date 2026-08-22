@@ -3410,7 +3410,8 @@
       }
       if (announce) {
         const viewUrl = buildEventViewUrl(selected);
-        setStatus(`大会「${selected.name}」を保存しました（閲覧: ${viewUrl}）`);
+        setStatus(`設定を保存しました${viewUrl ? `（${viewUrl}）` : ""}`);
+        showToast("設定を保存しました");
       }
       maybeSaveEventsRegistryToGithub();
       return selected;
