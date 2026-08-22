@@ -219,19 +219,20 @@
       box-shadow: none;
     }
 
-    .event-list-item-delete {
+    .event-delete-btn {
+      margin-left: auto;
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
       color: #b91c1c;
       border: 1px solid rgba(185, 28, 28, 0.28);
       background: #fff;
       cursor: pointer;
-      padding: 6px 10px;
+      padding: 6px 12px;
       border-radius: var(--radius-sm);
       font: inherit;
     }
 
-    .event-list-item-delete:hover {
+    .event-delete-btn:hover {
       background: rgba(185, 28, 28, 0.06);
       border-color: rgba(185, 28, 28, 0.45);
     }
@@ -1847,6 +1848,7 @@
     <div class="editor-event editor-only" id="editorEvent" hidden>
       <div class="editor-event-toolbar">
         <button type="button" class="btn-link-back" id="backToEventListBtn">&larr; &#22823;&#20250;&#19968;&#35239;</button>
+        <button type="button" id="eventDeleteBtn" class="event-delete-btn">&#21066;&#38500;</button>
       </div>
 
       <div class="controls surface">
@@ -1858,7 +1860,6 @@
           </div>
           <div class="controls-event-actions">
             <button type="button" id="eventSaveBtn" class="btn-secondary">&#35373;&#23450;&#12434;&#20445;&#23384;</button>
-            <button type="button" id="eventDeleteBtn" class="btn-secondary">&#21066;&#38500;</button>
           </div>
         </div>
 
@@ -2324,18 +2325,7 @@
           }
         });
 
-        const deleteBtn = document.createElement("button");
-        deleteBtn.type = "button";
-        deleteBtn.className = "event-list-item-delete";
-        deleteBtn.textContent = "削除";
-        deleteBtn.addEventListener("click", (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          deleteEventById(event.id);
-        });
-
         actions.appendChild(copyBtn);
-        actions.appendChild(deleteBtn);
         row.appendChild(mainBtn);
         row.appendChild(actions);
         list.appendChild(row);
