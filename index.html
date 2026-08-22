@@ -2092,7 +2092,10 @@
     const ADMIN_UNLOCK_KEY = "tournamentAdminUnlocked";
     const ADMIN_PASSWORD_SALT = "tournament-timetable.admin.v1";
     const FALLBACK_ADMIN_PASSWORD_HASH =
-      "a851a9b49b9c81477976e5c685d8485ed75f47d2b55f0a135b91423ef8d9a2af";
+      "9e0f640548ccf2090138aa8da3066461dfc0038028159dee300e046d36f3b8dc";
+    const RETIRED_ADMIN_PASSWORD_HASHES = [
+      "a851a9b49b9c81477976e5c685d8485ed75f47d2b55f0a135b91423ef8d9a2af"
+    ];
     const SHARED_EVENTS_NTFY_URL = "https://ntfy.sh/tournament-timetable-taka13music-events";
     const TIMETABLE_CACHE_DB = "tournamentTimetableCacheDb";
     const TIMETABLE_CACHE_STORE = "byEvent";
@@ -2116,7 +2119,7 @@
         const hash = normalizeAdminPasswordHash(
           source && typeof source === "object" ? source.adminPasswordHash : source
         );
-        if (hash) return hash;
+        if (hash && !RETIRED_ADMIN_PASSWORD_HASHES.includes(hash)) return hash;
       }
       return FALLBACK_ADMIN_PASSWORD_HASH;
     }
