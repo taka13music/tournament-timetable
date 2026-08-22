@@ -2688,12 +2688,14 @@
       }
     }
 
-    function syncSelectedEventFromForm() {
+    function syncSelectedEventFromForm({ includeName = true } = {}) {
       const selected = getSelectedEvent();
       if (!selected) return null;
       const values = readEventFormValues();
-      selected.name = values.name || selected.name || "無題の大会";
-      selected.slug = resolveEventSlugFromName(selected, selected.name);
+      if (includeName) {
+        selected.name = values.name || selected.name || "無題の大会";
+        selected.slug = resolveEventSlugFromName(selected, selected.name);
+      }
       selected.sheetUrl = values.sheetUrl;
       selected.sheetStart = values.sheetStart;
       selected.sheetEnd = values.sheetEnd;
@@ -3269,7 +3271,13 @@
         closeDeletedSelectedEvent(selectedId);
         const selected = getSelectedEvent();
         if (selected && parseEditorHash().view === "event" && document.activeElement?.id !== "eventName") {
+          const typedName = String($("eventName")?.value || "").trim();
+          const keepTypedName = typedName !== String(selected.name || "").trim();
           applyEventToForm(selected);
+          if (keepTypedName && $("eventName")) {
+            $("eventName").value = typedName;
+            updateEventViewUrlHint({ ...selected, name: typedName });
+          }
         }
       }
       return eventRegistry;
@@ -3370,7 +3378,7 @@
       return event;
     }
 
-    function saveCurrentEventFromForm({ announce = true } = {}) {
+    function saveCurrentEventFromForm({ announce = true, includeName = announce } = {}) {
       let selected = getSelectedEvent();
       const previousSlug = selected?.slug || "";
       if (!selected) {
@@ -3385,16 +3393,23 @@
         eventRegistry.events.push(selected);
         eventRegistry.selectedId = selected.id;
       } else {
-        syncSelectedEventFromForm();
-        if (!String(selected.name || "").trim()) {
+        syncSelectedEventFromForm({ includeName });
+        if (includeName && !String(selected.name || "").trim()) {
           setStatus("大会名を入力してください", true);
           $("eventName")?.focus();
           return null;
         }
-        selected.slug = resolveEventSlugFromName(selected, selected.name);
+        if (includeName) {
+          selected.slug = resolveEventSlugFromName(selected, selected.name);
+        }
         selected.updatedAt = Date.now();
       }
+      const typedName = includeName ? null : String($("eventName")?.value || "");
       applyEventToForm(selected);
+      if (typedName != null && $("eventName")) {
+        $("eventName").value = typedName;
+        updateEventViewUrlHint({ ...selected, name: typedName.trim() });
+      }
       renderEventList();
       persistEventRegistry();
       if (previousSlug && previousSlug !== selected.slug) {
@@ -3455,7 +3470,7 @@
     }
 
     function buildEventsJsonText() {
-      syncSelectedEventFromForm();
+      syncSelectedEventFromForm({ includeName: false });
       return JSON.stringify(
         {
           version: 1,
@@ -3518,13 +3533,8 @@
       $("eventDeleteBtn")?.addEventListener("click", deleteSelectedEvent);
       $("eventName")?.addEventListener("input", () => {
         const selected = getSelectedEvent();
-        if (selected) {
-          selected.name = String($("eventName")?.value || "").trim() || selected.name;
-        }
-        updateEventViewUrlHint(selected || getSelectedEvent());
-      });
-      $("eventName")?.addEventListener("change", () => {
-        saveCurrentEventFromForm({ announce: false });
+        const typedName = String($("eventName")?.value || "").trim();
+        updateEventViewUrlHint({ ...(selected || {}), name: typedName });
       });
       ["sheetUrl", "sheetStart", "sheetEnd"].forEach((id) => {
         $(id)?.addEventListener("input", () => setPublishButtonState());
