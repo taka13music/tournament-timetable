@@ -19,14 +19,18 @@
       "sheetStart": "#01 NLH Main Event Day 1A",
       "sheetEnd": "#24 NLH Employees",
       "updatedAt": 1787374724251
+    },
+    {
+      "id": "ec03b153-2ac5-4f9a-8748-e5758180681e",
+      "name": "新しい大会",
+      "slug": "event",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1yDR4QH3feVZru7fVW1xq5LLup4rtiFizU-1jNrNTiQw/edit?gid=748466166#gid=748466166",
+      "sheetStart": "",
+      "sheetEnd": "",
+      "updatedAt": 1787624053303
     }
   ],
   "deleted": [
-    {
-      "id": "1622953f-5333-4082-a07b-b81dbc3297f3",
-      "slug": "event",
-      "t": 1787369489455
-    },
     {
       "id": "a12d0a19-3597-478c-af4f-fb022dafacbf",
       "slug": "event-2",
