@@ -152,6 +152,9 @@ def apply_updates(data, records):
         url = str(record.get("sheetUrl") or existing.get("sheetUrl") or "")
         if not SHEET_RE.search(url):
             return
+        name = str(record.get("name") or existing.get("name") or slug).strip()
+        if name in ("新しい大会", "無題の大会") and (not slug or slug == "event" or slug.startswith("event-")):
+            return
         exist_t = stamp(existing)
         if existing and rec_t < exist_t:
             return

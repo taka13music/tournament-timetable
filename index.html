@@ -2107,6 +2107,7 @@
     const EVENTS_JSON_PATH = "events.json";
     const EVENTS_STORAGE_KEY = "tournamentEventsRegistry";
     const ADMIN_UNLOCK_KEY = "tournamentAdminUnlocked";
+    const ADMIN_UNLOCK_IDLE_MS = 60 * 60 * 1000;
     const ADMIN_PASSWORD_SALT = "tournament-timetable.admin.v1";
     const FALLBACK_ADMIN_PASSWORD_HASH =
       "9e0f640548ccf2090138aa8da3066461dfc0038028159dee300e046d36f3b8dc";
@@ -2152,19 +2153,77 @@
       return pickAdminPasswordHash(eventRegistry);
     }
 
-    function isAdminUnlocked() {
-      if (IS_VIEWER_MODE) return true;
+    function readAdminUnlockState() {
       try {
-        return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === getAdminPasswordHash();
+        const raw = sessionStorage.getItem(ADMIN_UNLOCK_KEY);
+        if (!raw) return null;
+        const expected = getAdminPasswordHash();
+        if (raw === expected) {
+          const state = { hash: raw, lastActiveAt: Date.now() };
+          sessionStorage.setItem(ADMIN_UNLOCK_KEY, JSON.stringify(state));
+          return state;
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.hash !== expected) return null;
+        return {
+          hash: parsed.hash,
+          lastActiveAt: Number(parsed.lastActiveAt) || 0
+        };
       } catch (_) {
-        return false;
+        return null;
       }
     }
 
-    function markAdminUnlocked() {
+    function writeAdminUnlockState(lastActiveAt = Date.now()) {
       try {
-        sessionStorage.setItem(ADMIN_UNLOCK_KEY, getAdminPasswordHash());
+        sessionStorage.setItem(
+          ADMIN_UNLOCK_KEY,
+          JSON.stringify({
+            hash: getAdminPasswordHash(),
+            lastActiveAt
+          })
+        );
       } catch (_) {}
+    }
+
+    function clearAdminUnlockState() {
+      try {
+        sessionStorage.removeItem(ADMIN_UNLOCK_KEY);
+      } catch (_) {}
+    }
+
+    function isAdminUnlocked() {
+      if (IS_VIEWER_MODE) return true;
+      const state = readAdminUnlockState();
+      if (!state) return false;
+      if (Date.now() - state.lastActiveAt > ADMIN_UNLOCK_IDLE_MS) {
+        clearAdminUnlockState();
+        return false;
+      }
+      return true;
+    }
+
+    function markAdminUnlocked() {
+      writeAdminUnlockState(Date.now());
+    }
+
+    function touchAdminUnlock() {
+      if (IS_VIEWER_MODE) return;
+      const state = readAdminUnlockState();
+      if (!state) return;
+      if (Date.now() - state.lastActiveAt > ADMIN_UNLOCK_IDLE_MS) {
+        clearAdminUnlockState();
+        return;
+      }
+      writeAdminUnlockState(Date.now());
+    }
+
+    function enforceAdminUnlockIdle() {
+      if (IS_VIEWER_MODE || isAdminUnlocked()) return;
+      const route = parseEditorHash();
+      if (route.view === "event") {
+        applyEditorRoute({ skipHashWrite: true }).catch(() => {});
+      }
     }
 
     function openAdminUnlockModal() {
@@ -2291,6 +2350,18 @@
       return !normalized || normalized === "event" || /^event-\d+$/.test(normalized);
     }
 
+    function isPlaceholderDraftEvent(event) {
+      const name = String(event?.name || "").trim();
+      if (name && name !== "新しい大会" && name !== "無題の大会") return false;
+      return isPlaceholderEventSlug(event?.slug || event?.name);
+    }
+
+    function eventFormBelongsToSelected(event = getSelectedEvent()) {
+      if (!event?.id) return false;
+      const route = parseEditorHash();
+      return route.view === "event" && route.eventId === event.id;
+    }
+
     function eventUpdatedAt(event) {
       const n = Number(event?.updatedAt || event?.t || 0);
       return Number.isFinite(n) ? n : 0;
@@ -2341,23 +2412,16 @@
 
     function restorePublishedEvents(registry, published) {
       if (!published?.events?.length) return registry;
+      const deleted = registry?.deleted || [];
       const byId = new Map((registry?.events || []).map((event) => [event.id, event]));
       for (const raw of published.events) {
         const event = createEmptyEvent(raw);
-        if (event.id) byId.set(event.id, mergeEventPair(byId.get(event.id) || event, event));
+        if (!event.id || isPlaceholderDraftEvent(event) || eventMatchesDeleted(event, deleted)) continue;
+        byId.set(event.id, mergeEventPair(byId.get(event.id) || event, event));
       }
-      const liveIds = new Set(published.events.map((event) => event.id).filter(Boolean));
-      const liveSlugs = new Set(
-        published.events.map((event) => normalizeEventSlug(event.slug || event.name)).filter(Boolean)
-      );
-      const deleted = (registry?.deleted || []).filter((rec) => {
-        if (rec.id && liveIds.has(rec.id)) return false;
-        if (rec.slug && liveSlugs.has(rec.slug)) return false;
-        return true;
-      });
       return {
         ...registry,
-        events: [...byId.values()],
+        events: filterDeletedEvents([...byId.values()], deleted),
         deleted
       };
     }
@@ -2381,7 +2445,8 @@
         sheetUrl: String(partial.sheetUrl || "").trim(),
         sheetStart: String(partial.sheetStart || "").trim(),
         sheetEnd: String(partial.sheetEnd || "").trim(),
-        updatedAt: updatedAt || undefined
+        updatedAt: updatedAt || undefined,
+        localOnly: Boolean(partial.localOnly)
       };
     }
 
@@ -2615,16 +2680,17 @@
         name: "新しい大会",
         sheetUrl: "",
         sheetStart: "",
-        sheetEnd: ""
+        sheetEnd: "",
+        localOnly: true
       });
       event.slug = uniqueEventSlug(event.name, event.id);
       eventRegistry.events.push(event);
       eventRegistry.selectedId = event.id;
+      applyEventToForm(event);
       persistEventRegistry();
       renderEventList();
       setEditorHash("event", event.id);
       setStatus("大会を作成しました。名前とシートを設定してください。");
-      maybeSaveEventsRegistryToGithub();
       setTimeout(() => $("eventName")?.focus(), 0);
     }
 
@@ -2971,7 +3037,9 @@
 
     async function maybeSaveEventsRegistryToGithub() {
       const event = getSelectedEvent();
-      if (event) publishSharedEventRecord(event).catch(() => {});
+      if (event && !isPlaceholderDraftEvent(event)) {
+        publishSharedEventRecord(event).catch(() => {});
+      }
       const settings = loadGithubSettings();
       if (!settings.token || IS_VIEWER_MODE) return;
       try {
@@ -2990,6 +3058,7 @@
     function syncSelectedEventFromForm({ includeName = true } = {}) {
       const selected = getSelectedEvent();
       if (!selected) return null;
+      if (!eventFormBelongsToSelected(selected)) return selected;
       const values = readEventFormValues();
       if (includeName) {
         selected.name = values.name || selected.name || "無題の大会";
@@ -3425,6 +3494,7 @@
       if (!normalizeEventSlug(event.slug || event.name) || !isSharedSheetUrl(event.sheetUrl)) {
         return null;
       }
+      if (isPlaceholderDraftEvent(event)) return null;
       event.slug = normalizeEventSlug(event.slug || event.name);
       event.updatedAt = eventUpdatedAt(raw) || event.updatedAt || Date.now();
       return event;
@@ -3552,10 +3622,22 @@
       });
       const fromFile = await fetchEventsJson().catch(() => null);
       const fromNtfy = await fetchNtfySharedUpdates();
+      fromNtfy.upserts = (fromNtfy.upserts || []).filter((event) => !isPlaceholderDraftEvent(event));
       const fromStorage = loadEventRegistryFromStorage();
+      const remoteEvents = (fromFile?.events || []).filter((event) => !isPlaceholderDraftEvent(event));
+      const storageForMerge = {
+        ...(fromStorage || { events: [], deleted: [] }),
+        events: (fromStorage?.events || []).filter((event) => {
+          const onRemote = remoteEvents.some(
+            (remote) => remote.id === event.id || remote.slug === event.slug
+          );
+          if (onRemote) return true;
+          return Boolean(event.localOnly) || (isPlaceholderDraftEvent(event) && !eventUpdatedAt(event));
+        })
+      };
       let merged = mergeEventRegistries(
-        fromFile || { events: [], selectedId: null, deleted: [] },
-        fromStorage || { events: [], deleted: [] }
+        fromFile ? { ...fromFile, events: remoteEvents } : { events: [], selectedId: null, deleted: [] },
+        storageForMerge
       );
       merged.deleted = mergeDeletedRecords(
         eventRegistry.deleted,
@@ -3608,7 +3690,8 @@
         sheetUrl: newer.sheetUrl || older.sheetUrl,
         sheetStart: newer.sheetStart || older.sheetStart,
         sheetEnd: newer.sheetEnd || older.sheetEnd,
-        updatedAt: Math.max(existingTs, incomingTs) || undefined
+        updatedAt: Math.max(existingTs, incomingTs) || undefined,
+        localOnly: Boolean(existing.localOnly || incoming.localOnly)
       });
     }
 
@@ -3689,10 +3772,13 @@
       let selected = getSelectedEvent();
       const previousSlug = selected?.slug || "";
       if (!selected) {
+        if (!announce && !eventFormBelongsToSelected()) return null;
         selected = createEmptyEvent(readEventFormValues());
-        if (!String(selected.name || "").trim()) {
-          setStatus("大会名を入力してください", true);
-          $("eventName")?.focus();
+        if (!String(selected.name || "").trim() || isPlaceholderDraftEvent(selected)) {
+          if (announce) {
+            setStatus("大会名を入力してください", true);
+            $("eventName")?.focus();
+          }
           return null;
         }
         selected.slug = uniqueEventSlug(selected.name, selected.id);
@@ -3710,6 +3796,7 @@
           selected.slug = resolveEventSlugFromName(selected, selected.name);
         }
         selected.updatedAt = Date.now();
+        if (!isPlaceholderDraftEvent(selected)) selected.localOnly = false;
       }
       const typedName = includeName ? null : String($("eventName")?.value || "");
       applyEventToForm(selected);
@@ -3735,7 +3822,9 @@
         setStatus(`設定を保存しました${viewUrl ? `（${viewUrl}）` : ""}`);
         showToast("設定を保存しました");
       }
-      maybeSaveEventsRegistryToGithub();
+      if (announce || !isPlaceholderDraftEvent(selected)) {
+        maybeSaveEventsRegistryToGithub();
+      }
       return selected;
     }
 
@@ -3805,12 +3894,16 @@
     }
 
     function buildEventsJsonText() {
-      syncSelectedEventFromForm({ includeName: false });
+      if (eventFormBelongsToSelected()) {
+        syncSelectedEventFromForm({ includeName: false });
+      }
       return JSON.stringify(
         {
           version: 1,
           selectedId: eventRegistry.selectedId,
-          events: eventRegistry.events.map((event) => ({
+          events: eventRegistry.events
+            .filter((event) => !isPlaceholderDraftEvent(event))
+            .map((event) => ({
             id: event.id,
             name: event.name,
             slug: event.slug,
@@ -3857,6 +3950,21 @@
         if (document.visibilityState === "visible") refresh();
       });
       setInterval(refresh, 15000);
+    }
+
+    function setupAdminUnlockIdle() {
+      if (IS_VIEWER_MODE) return;
+      const onActivity = () => {
+        if ($("adminUnlockModal")?.classList.contains("visible")) return;
+        touchAdminUnlock();
+      };
+      document.addEventListener("pointerdown", onActivity, { passive: true });
+      document.addEventListener("keydown", onActivity);
+      window.addEventListener("focus", enforceAdminUnlockIdle);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") enforceAdminUnlockIdle();
+      });
+      setInterval(enforceAdminUnlockIdle, 30000);
     }
 
     function setupEventControls() {
@@ -10037,6 +10145,7 @@
       setupPublishControls();
       setupSharedBoardControls();
       setupSharedEventSync();
+      setupAdminUnlockIdle();
       initEventRegistry().catch((err) => {
         console.warn(err);
         setStatus("大会一覧の読み込みに失敗しました", true);
