@@ -436,10 +436,10 @@
       background: rgba(99, 102, 241, 0.06);
     }
 
-    body.editor-view-list .editor-event,
-    body.editor-view-list .meta-row,
-    body.editor-view-list .overlap-panel,
-    body.editor-view-list .board-wrap {
+    body.editor-view-list:not(.viewer-mode) .editor-event,
+    body.editor-view-list:not(.viewer-mode) .meta-row,
+    body.editor-view-list:not(.viewer-mode) .overlap-panel,
+    body.editor-view-list:not(.viewer-mode) .board-wrap {
       display: none !important;
     }
 
@@ -447,7 +447,7 @@
       display: none !important;
     }
 
-    body.editor-view-list .status:empty {
+    body.editor-view-list:not(.viewer-mode) .status:empty {
       display: none;
     }
 
@@ -5150,6 +5150,7 @@
     }
 
     function setupViewerMode() {
+      document.body.classList.remove("editor-view-list", "editor-view-event");
       document.body.classList.add("viewer-mode");
       $("viewerRefreshBtn")?.addEventListener("click", async () => {
         try {
