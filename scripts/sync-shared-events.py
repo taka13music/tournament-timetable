@@ -233,7 +233,7 @@ def apply_updates(data, records):
             continue
         orig = original_order.get(str(event.get("id") or ""), len(events) + i)
         event["createdAt"] = orig + 1
-    events.sort(key=lambda event: (created_at(event) or 10**18, str(event.get("id") or "")))
+    events.sort(key=lambda event: (-(created_at(event) or 0), str(event.get("id") or "")))
     selected = data.get("selectedId")
     if selected and not any(event.get("id") == selected for event in events):
         selected = events[0]["id"] if events else None
