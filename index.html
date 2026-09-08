@@ -177,6 +177,14 @@
       margin-bottom: 4px;
     }
 
+    .event-list-item-registered {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
     .event-list-item-meta {
       display: block;
       font-size: var(--text-xs);
@@ -1867,6 +1875,7 @@
             <label for="eventName">&#22823;&#20250;&#21517;</label>
             <input id="eventName" type="text" value="" placeholder="&#20363;: JOPT 2025" />
             <span class="hint">&#38322;&#35239;URL&#12399;&#22823;&#20250;&#21517;&#12363;&#12425;&#33258;&#21205;&#12391;&#27770;&#12414;&#12426;&#12414;&#12377;</span>
+            <span class="hint" id="eventRegisteredAtHint"></span>
           </div>
           <div class="controls-event-actions">
             <button type="button" id="eventSaveBtn" class="btn-secondary">&#35373;&#23450;&#12434;&#20445;&#23384;</button>
@@ -2372,6 +2381,33 @@
       return Number.isFinite(n) && n > 0 ? n : 0;
     }
 
+    function isPlausibleTimestamp(value) {
+      const n = Number(value || 0);
+      return Number.isFinite(n) && n >= 1e12;
+    }
+
+    function eventRegisteredAt(event) {
+      const created = eventCreatedAt(event);
+      if (isPlausibleTimestamp(created)) return created;
+      const updated = eventUpdatedAt(event);
+      if (isPlausibleTimestamp(updated)) return updated;
+      return 0;
+    }
+
+    function formatEventRegisteredAt(event) {
+      const n = eventRegisteredAt(event);
+      if (!n) return "";
+      const date = new Date(n);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
     function sortEventsByRegistration(events) {
       return [...(events || [])].sort((a, b) => {
         const ca = eventCreatedAt(a) || Number.MAX_SAFE_INTEGER;
@@ -2521,6 +2557,11 @@
         sheetEnd: event?.sheetEnd || ""
       });
       updateEventViewUrlHint(event);
+      const registered = $("eventRegisteredAtHint");
+      if (registered) {
+        const label = formatEventRegisteredAt(event);
+        registered.textContent = label ? `登録 ${label}` : "";
+      }
     }
 
     function getViewerSiteOrigin() {
@@ -2598,8 +2639,14 @@
         const mainBtn = document.createElement("button");
         mainBtn.type = "button";
         mainBtn.className = "event-list-item-main";
+        const registeredAt = formatEventRegisteredAt(event);
         mainBtn.innerHTML = `
           <span class="event-list-item-name">${escapeHtml(event.name || "無題の大会")}</span>
+          ${
+            registeredAt
+              ? `<span class="event-list-item-registered">登録 ${escapeHtml(registeredAt)}</span>`
+              : ""
+          }
           <span class="event-list-item-meta">${
             url ? escapeHtml(url) : "大会名を入力すると閲覧URLが決まります"
           }</span>
