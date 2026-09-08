@@ -132,11 +132,17 @@ def apply_updates(data, records):
     deleted = merge_deleted(data.get("deleted"), [])
 
     def matches_deleted(event, rec):
-        event_id = event.get("id")
+        event_id = str(event.get("id") or "").strip()
+        rec_id = str(rec.get("id") or "").strip()
         slug = normalize_slug(event.get("slug") or event.get("name"))
-        return (event_id and rec.get("id") and event_id == rec.get("id")) or (
-            slug and rec.get("slug") and slug == rec.get("slug")
-        )
+        rec_slug = rec.get("slug") or ""
+        if event_id and rec_id and event_id == rec_id:
+            return True
+        if slug and rec_slug and slug == rec_slug and (not rec_id or rec_id == event_id):
+            if slug in ("event",) or slug.startswith("event-"):
+                return bool(rec_id and rec_id == event_id)
+            return True
+        return False
 
     def upsert(record):
         slug = normalize_slug(record.get("slug") or record.get("name"))
@@ -144,6 +150,9 @@ def apply_updates(data, records):
         existing = (record_id and by_id.get(record_id)) or (slug and by_slug.get(slug)) or {}
         rec_t = stamp(record)
         if record.get("deleted"):
+            if not record_id and (slug == "event" or (slug or "").startswith("event-")):
+                deleted[:] = merge_deleted(deleted, [record])
+                return
             forget(existing)
             if slug:
                 by_slug.pop(slug, None)

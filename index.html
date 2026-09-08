@@ -2402,12 +2402,26 @@
       const slug = normalizeEventSlug(event?.slug || event?.name);
       const eventTs = eventUpdatedAt(event);
       return (deleted || []).some((rec) => {
-        const match = (id && rec.id && rec.id === id) || (slug && rec.slug && rec.slug === slug);
-        if (!match) return false;
+        const recId = rec?.id || "";
+        const recSlug = rec?.slug || "";
+        const idMatch = Boolean(id && recId && recId === id);
+        const slugMatch = Boolean(slug && recSlug && recSlug === slug && (!recId || recId === id));
+        if (!idMatch && !slugMatch) return false;
+        if (!idMatch && isPlaceholderEventSlug(slug)) return false;
         const tombTs = Number(rec.t) || 0;
         if (eventTs && tombTs && tombTs < eventTs) return false;
         return true;
       });
+    }
+
+    function shouldKeepLocalEvent(event, remoteEvents) {
+      if (!event?.id) return false;
+      if ((remoteEvents || []).some((remote) => remote.id === event.id || remote.slug === event.slug)) {
+        return true;
+      }
+      if (event.localOnly) return true;
+      if (isPlaceholderDraftEvent(event)) return !eventUpdatedAt(event);
+      return true;
     }
 
     function restorePublishedEvents(registry, published) {
@@ -3625,15 +3639,16 @@
       fromNtfy.upserts = (fromNtfy.upserts || []).filter((event) => !isPlaceholderDraftEvent(event));
       const fromStorage = loadEventRegistryFromStorage();
       const remoteEvents = (fromFile?.events || []).filter((event) => !isPlaceholderDraftEvent(event));
+      const localEvents = [];
+      const seenLocalIds = new Set();
+      for (const event of [...(eventRegistry.events || []), ...(fromStorage?.events || [])]) {
+        if (!event?.id || seenLocalIds.has(event.id) || !shouldKeepLocalEvent(event, remoteEvents)) continue;
+        seenLocalIds.add(event.id);
+        localEvents.push(event);
+      }
       const storageForMerge = {
         ...(fromStorage || { events: [], deleted: [] }),
-        events: (fromStorage?.events || []).filter((event) => {
-          const onRemote = remoteEvents.some(
-            (remote) => remote.id === event.id || remote.slug === event.slug
-          );
-          if (onRemote) return true;
-          return Boolean(event.localOnly) || (isPlaceholderDraftEvent(event) && !eventUpdatedAt(event));
-        })
+        events: localEvents
       };
       let merged = mergeEventRegistries(
         fromFile ? { ...fromFile, events: remoteEvents } : { events: [], selectedId: null, deleted: [] },
@@ -3653,6 +3668,11 @@
         merged.selectedId = selectedId;
       }
       eventRegistry = merged;
+      for (const event of eventRegistry.events || []) {
+        if (event.localOnly && remoteEvents.some((remote) => remote.id === event.id)) {
+          event.localOnly = false;
+        }
+      }
       persistEventRegistry();
       if (render) {
         renderEventList();
@@ -3796,7 +3816,6 @@
           selected.slug = resolveEventSlugFromName(selected, selected.name);
         }
         selected.updatedAt = Date.now();
-        if (!isPlaceholderDraftEvent(selected)) selected.localOnly = false;
       }
       const typedName = includeName ? null : String($("eventName")?.value || "");
       applyEventToForm(selected);
@@ -3808,11 +3827,14 @@
       persistEventRegistry();
       if (previousSlug && previousSlug !== selected.slug) {
         rememberSlugAlias(selected, previousSlug);
-        eventRegistry.deleted = mergeDeletedRecords(eventRegistry.deleted, [
-          normalizeDeletedRecord({ slug: previousSlug, t: Date.now() })
-        ]);
+        if (!isPlaceholderEventSlug(previousSlug)) {
+          eventRegistry.deleted = mergeDeletedRecords(eventRegistry.deleted, [
+            normalizeDeletedRecord({ slug: previousSlug, t: Date.now() })
+          ]);
+          persistEventRegistry();
+          publishSharedEventRecord({ slug: previousSlug }, { deleted: true }).catch(() => {});
+        }
         persistEventRegistry();
-        publishSharedEventRecord({ slug: previousSlug }, { deleted: true }).catch(() => {});
         if (Object.keys(tournamentsByDay).length) {
           persistTimetableCache(selected.id).catch(() => {});
         }
