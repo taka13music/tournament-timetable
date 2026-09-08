@@ -180,6 +180,16 @@ def apply_updates(data, records):
         }
         if not new_event["updatedAt"]:
             new_event.pop("updatedAt", None)
+        created_vals = []
+        for src in (existing, record):
+            try:
+                n = int(src.get("createdAt") or 0)
+            except (TypeError, ValueError):
+                n = 0
+            if n > 0:
+                created_vals.append(n)
+        if created_vals:
+            new_event["createdAt"] = min(created_vals)
         forget(existing)
         by_id[new_event["id"]] = new_event
         if new_event.get("slug"):
@@ -205,6 +215,25 @@ def apply_updates(data, records):
         for event in by_id.values()
         if not any(matches_deleted(event, rec) for rec in deleted)
     ]
+    original_order = {
+        str(event.get("id") or ""): i
+        for i, event in enumerate(data.get("events") or [])
+        if event.get("id")
+    }
+
+    def created_at(event):
+        try:
+            n = int(event.get("createdAt") or 0)
+            return n if n > 0 else 0
+        except (TypeError, ValueError):
+            return 0
+
+    for i, event in enumerate(events):
+        if created_at(event):
+            continue
+        orig = original_order.get(str(event.get("id") or ""), len(events) + i)
+        event["createdAt"] = orig + 1
+    events.sort(key=lambda event: (created_at(event) or 10**18, str(event.get("id") or "")))
     selected = data.get("selectedId")
     if selected and not any(event.get("id") == selected for event in events):
         selected = events[0]["id"] if events else None

@@ -2367,6 +2367,27 @@
       return Number.isFinite(n) ? n : 0;
     }
 
+    function eventCreatedAt(event) {
+      const n = Number(event?.createdAt || 0);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+
+    function sortEventsByRegistration(events) {
+      return [...(events || [])].sort((a, b) => {
+        const ca = eventCreatedAt(a) || Number.MAX_SAFE_INTEGER;
+        const cb = eventCreatedAt(b) || Number.MAX_SAFE_INTEGER;
+        if (ca !== cb) return ca - cb;
+        return String(a.id || "").localeCompare(String(b.id || ""));
+      });
+    }
+
+    function stampRegistrationOrder(events) {
+      (events || []).forEach((event, i) => {
+        if (!eventCreatedAt(event)) event.createdAt = i + 1;
+      });
+      return events;
+    }
+
     function normalizeDeletedRecord(raw) {
       const id = String(raw?.id || "").trim();
       const slug = normalizeEventSlug(raw?.slug || raw?.name);
@@ -2460,6 +2481,7 @@
         sheetStart: String(partial.sheetStart || "").trim(),
         sheetEnd: String(partial.sheetEnd || "").trim(),
         updatedAt: updatedAt || undefined,
+        createdAt: eventCreatedAt(partial) || undefined,
         localOnly: Boolean(partial.localOnly)
       };
     }
@@ -2567,7 +2589,7 @@
         return;
       }
       if (empty) empty.hidden = true;
-      for (const event of eventRegistry.events) {
+      for (const event of sortEventsByRegistration(eventRegistry.events)) {
         const row = document.createElement("div");
         row.className = "event-list-item";
         row.dataset.eventId = event.id;
@@ -2695,7 +2717,8 @@
         sheetUrl: "",
         sheetStart: "",
         sheetEnd: "",
-        localOnly: true
+        localOnly: true,
+        createdAt: Date.now()
       });
       event.slug = uniqueEventSlug(event.name, event.id);
       eventRegistry.events.push(event);
@@ -3673,6 +3696,8 @@
           event.localOnly = false;
         }
       }
+      stampRegistrationOrder(eventRegistry.events);
+      eventRegistry.events = sortEventsByRegistration(eventRegistry.events);
       persistEventRegistry();
       if (render) {
         renderEventList();
@@ -3711,6 +3736,9 @@
         sheetStart: newer.sheetStart || older.sheetStart,
         sheetEnd: newer.sheetEnd || older.sheetEnd,
         updatedAt: Math.max(existingTs, incomingTs) || undefined,
+        createdAt:
+          [eventCreatedAt(existing), eventCreatedAt(incoming)].filter((n) => n > 0).sort((a, b) => a - b)[0] ||
+          undefined,
         localOnly: Boolean(existing.localOnly || incoming.localOnly)
       });
     }
@@ -3740,8 +3768,9 @@
         remember(event);
       };
       for (const event of base?.events || []) add(event);
+      stampRegistrationOrder([...byId.values()]);
       for (const event of overlay?.events || []) add(event);
-      const events = [...byId.values()];
+      const events = sortEventsByRegistration([...byId.values()]);
       const selectedId =
         (overlay?.selectedId && byId.has(overlay.selectedId) && overlay.selectedId) ||
         (base?.selectedId && byId.has(base.selectedId) && base.selectedId) ||
@@ -3803,6 +3832,7 @@
         }
         selected.slug = uniqueEventSlug(selected.name, selected.id);
         selected.updatedAt = Date.now();
+        selected.createdAt = eventCreatedAt(selected) || Date.now();
         eventRegistry.events.push(selected);
         eventRegistry.selectedId = selected.id;
       } else {
@@ -3933,7 +3963,8 @@
             sheetUrl: event.sheetUrl,
             sheetStart: event.sheetStart,
             sheetEnd: event.sheetEnd,
-            updatedAt: eventUpdatedAt(event) || undefined
+            updatedAt: eventUpdatedAt(event) || undefined,
+            createdAt: eventCreatedAt(event) || undefined
           })),
           deleted: mergeDeletedRecords(eventRegistry.deleted),
           adminPasswordHash: getAdminPasswordHash()
@@ -3953,6 +3984,8 @@
           event.slug = uniqueEventSlug(event.name, event.id);
         }
       }
+      stampRegistrationOrder(eventRegistry.events);
+      eventRegistry.events = sortEventsByRegistration(eventRegistry.events);
       persistEventRegistry();
       renderEventList();
       if (!location.hash || location.hash === "#") {
@@ -5033,7 +5066,7 @@
       const boardWrap = document.querySelector(".board-wrap");
       if (!picker || !list) return;
       list.innerHTML = "";
-      for (const event of events) {
+      for (const event of sortEventsByRegistration(events)) {
         if (!event.slug) continue;
         const link = document.createElement("a");
         link.href = `/e/${encodeURIComponent(event.slug)}`;
