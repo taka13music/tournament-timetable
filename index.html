@@ -2054,8 +2054,10 @@
     const SHEET_INCREMENTAL_CONCURRENCY = 8;
     const RENDER_EVERY_N_SHEETS = 4;
     const TAB_REFRESH_EVERY_N_SHEETS = 4;
-    const GVIZ_DATA_RANGE = "A1:L200";
-    const FESTIVAL_META_RANGE = "A1:L8";
+    // MIX/Stud/FL sheets put Start/End in columns M–N (index 12–13).
+    // A1:L200 cut those off, so events landed on 日付不明 with no time blocks.
+    const GVIZ_DATA_RANGE = "A1:Z300";
+    const FESTIVAL_META_RANGE = "A1:Z8";
     const FETCH_RETRY_STATUSES = [429, 503];
     const FETCH_MAX_RETRIES = 2;
     const REVISION_MAP_TIMEOUT_MS = 2500;
@@ -7234,7 +7236,7 @@
     }
 
     async function fetchJoptFestivalMeta(url, sheetName, gid) {
-      const ranges = [FESTIVAL_META_RANGE, "I2:K2", "H1:L4"];
+      const ranges = [FESTIVAL_META_RANGE, "I2:K2", "H1:L4", "H1:N4"];
       for (const range of ranges) {
         try {
           const text = await fetchGvizText(url, sheetName, gid, { headers: false, range });
@@ -8762,6 +8764,12 @@
       if (isJOPTFormat(grid) || hasJOPTLevelRows(grid)) {
         const t = parseJOPTEventSheet(grid, tabName);
         if (t && t.blocks.length) return [t];
+        // Keep the JOPT result when the sheet is clearly a structure tab.
+        // Falling through to the column parser created header-only
+        // "日付不明" tournaments for MIX/FL sheets.
+        if (t && (t.eventDate || t.startRaw || t.fee || t.chips || t.name)) {
+          return [t];
+        }
       }
       const matrix = parseSheetGridMatrix(grid);
       if (matrix.length) return matrix;
