@@ -3081,7 +3081,7 @@
     }
 
     async function maybeSaveSharedDataAfterLoad({ announceSuccess = false } = {}) {
-      if (exportInProgress) return;
+      if (IS_VIEWER_MODE || exportInProgress) return;
       const missingSheets = getMissingScheduledSheetNames();
       if (missingSheets.length) return;
       if (!Object.keys(tournamentsByDay).length) return;
@@ -4830,19 +4830,59 @@
       return incomingTs <= currentTs;
     }
 
+    function absoluteJsonUrls(path) {
+      const urls = [new URL(path, `${location.origin}/`).href];
+      for (const remote of githubFilePublicUrls(path)) {
+        if (remote.includes("raw.githubusercontent.com")) urls.push(remote);
+      }
+      return urls;
+    }
+
+    async function fetchJsonIfNotHtml(url) {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) return null;
+      return res.json();
+    }
+
+    async function fetchFirstJson(urls) {
+      for (const url of urls) {
+        try {
+          const data = await fetchJsonIfNotHtml(url);
+          if (data) return data;
+        } catch (_) {}
+      }
+      return null;
+    }
+
     async function fetchSavedViewerSnapshot(slug) {
       const path = slug ? getLegacyPublishedPath(slug) : PUBLISHED_JSON_PATH;
-      const url = new URL(path, `${location.origin}/`).href;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("text/html")) return null;
-        const decoded = decodePublishedJson(await res.json());
-        return hasPublishSnapshot(decoded) ? decoded : null;
-      } catch (_) {
-        return null;
-      }
+      const raw = await fetchFirstJson(absoluteJsonUrls(path));
+      const decoded = decodePublishedJson(raw);
+      return hasPublishSnapshot(decoded) ? decoded : null;
+    }
+
+    async function fetchViewerEventList() {
+      const local = loadEventRegistryFromStorage();
+      const localEvents = (local?.events || []).filter((event) => event.slug && event.sheetUrl);
+      if (localEvents.length) return localEvents;
+      const data = await fetchFirstJson(absoluteJsonUrls(EVENTS_JSON_PATH));
+      if (!data || !Array.isArray(data.events)) return [];
+      return data.events
+        .map((event) => createEmptyEvent(event))
+        .filter((event) => event.slug);
+    }
+
+    async function fetchSharedEventForViewer(slug) {
+      const local = loadEventRegistryFromStorage();
+      const localHit = findEventBySlug(slug, local || { events: [] });
+      if (localHit?.sheetUrl) return localHit;
+      const data = await fetchFirstJson(absoluteJsonUrls(EVENTS_JSON_PATH));
+      if (!data || !Array.isArray(data.events)) return null;
+      return findEventBySlug(slug, {
+        events: data.events.map((event) => createEmptyEvent(event))
+      });
     }
 
     async function refreshViewerFromSheet() {
@@ -4882,6 +4922,59 @@
       if (sheetUrlEl) sheetUrlEl.value = sheetConfig.sheetUrl;
       if (sheetStartEl) sheetStartEl.value = sheetConfig.sheetStart;
       if (sheetEndEl) sheetEndEl.value = sheetConfig.sheetEnd;
+    }
+
+    async function loadViewerFromLiveConfig(config) {
+      if (!config?.sheetUrl?.trim()) {
+        throw new Error("公開設定にスプレッドシートURLがありません。");
+      }
+
+      const sheetConfig = resolveSheetConfig({
+        sheetUrl: config.sheetUrl,
+        sheetStart: config.sheetStart,
+        sheetEnd: config.sheetEnd
+      });
+      applySheetConfigToDom(sheetConfig);
+      $("hourHeight").value = String(config.hourHeight || 60);
+
+      const savedState = {
+        selectedDay: config.selectedDay || "",
+        overlapHighlight: config.overlapHighlight || { mode: "none", bandId: null },
+        overlapBandKey: config.overlapBandKey || null
+      };
+
+      const loadOptions = { preserveState: true, savedState, sheetConfig };
+      if (!sheetConfig.sheetStart || !sheetConfig.sheetEnd) {
+        const ok = await loadSingleFromUrl(loadOptions);
+        if (!ok) {
+          throw new Error("スプレッドシートからデータを読み込めませんでした。");
+        }
+        return;
+      }
+
+      await loadAll(loadOptions);
+      if (!Object.keys(tournamentsByDay).length) {
+        throw new Error("スプレッドシートからデータを読み込めませんでした。");
+      }
+    }
+
+    async function displayViewerFromSharedSheet(slug) {
+      const event = await fetchSharedEventForViewer(slug);
+      const config = eventToViewerSheetConfig(event);
+      if (!config?.sheetUrl) return false;
+      setStatus("読み込み中...");
+      await loadViewerFromLiveConfig(config);
+      if (!dayTabItems.length) return false;
+      viewerPublishConfig = {
+        ...config,
+        eventName: event?.name || config.eventName || "",
+        eventId: event?.slug || slug
+      };
+      renderViewerFromDecoded(viewerPublishConfig);
+      updateViewerBanner(viewerPublishConfig, false);
+      setStatus("");
+      await persistViewerSnapshot(viewerPublishConfig);
+      return true;
     }
 
     function buildPublishedJsonText(config) {
@@ -5103,8 +5196,7 @@
         } else if (cValue) {
           decoded = await decodePublishPayload(cValue);
         } else if (!normalizeEventSlug(pValue)) {
-          const registry = loadEventRegistryFromStorage();
-          const events = (registry?.events || []).filter((event) => event.slug);
+          const events = await fetchViewerEventList();
           if (events.length === 1) {
             location.replace(`/e/${encodeURIComponent(events[0].slug)}`);
             return;
@@ -5118,6 +5210,10 @@
           const requestedSlug = normalizeEventSlug(pValue);
           if (await tryPaintViewerFromCache(requestedSlug)) return;
           decoded = await fetchSavedViewerSnapshot(requestedSlug);
+          if (!hasPublishSnapshot(decoded)) {
+            const shown = await displayViewerFromSharedSheet(requestedSlug);
+            if (shown) return;
+          }
         }
 
         if (!hasPublishSnapshot(decoded)) {
