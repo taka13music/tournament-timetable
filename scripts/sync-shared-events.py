@@ -68,7 +68,7 @@ def merge_deleted(existing, incoming):
     return out[:200]
 
 
-def fetch_ntfy():
+def fetch_ntfy_rows():
     req = urllib.request.Request(NTFY_URL, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=20) as res:
         text = res.read().decode("utf-8").strip()
@@ -78,8 +78,14 @@ def fetch_ntfy():
         rows = json.loads(text)
     else:
         rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def records_from_rows(rows):
     records = []
     for row in rows:
+        if is_snapshot_row(row):
+            continue
         if row.get("event") not in (None, "message"):
             continue
         message = row.get("message", row)
@@ -91,6 +97,104 @@ def fetch_ntfy():
         if isinstance(message, dict):
             records.append(message)
     return records
+
+
+def fetch_ntfy():
+    return records_from_rows(fetch_ntfy_rows())
+
+
+def is_snapshot_row(row):
+    tags = row.get("tags") or []
+    title = str(row.get("title") or "")
+    return title == "snapshot" or (isinstance(tags, list) and "snapshot" in tags)
+
+
+def snapshot_slug(name):
+    filename = str(name or "")
+    if not filename.endswith(".json"):
+        return ""
+    slug = normalize_slug(filename[: -len(".json")])
+    if not slug or f"{slug}.json" != filename:
+        return ""
+    return slug
+
+
+def payload_time(payload):
+    try:
+        return int(payload.get("t") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def write_snapshot_payload(dest, payload):
+    if not isinstance(payload, dict) or payload.get("v") not in (4, 5):
+        return False
+    days = payload.get("s")
+    if not isinstance(days, list) or not days:
+        return False
+    incoming_t = payload_time(payload)
+    if dest.exists():
+        try:
+            old = json.loads(dest.read_text())
+        except (OSError, json.JSONDecodeError):
+            old = None
+        if isinstance(old, dict):
+            old_body = {key: value for key, value in old.items() if key != "t"}
+            new_body = {key: value for key, value in payload.items() if key != "t"}
+            if json.dumps(old_body, sort_keys=True) == json.dumps(new_body, sort_keys=True):
+                return False
+            old_t = payload_time(old)
+            if incoming_t and old_t and incoming_t < old_t:
+                return False
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n")
+    return True
+
+
+def sync_snapshots(rows, allowed_slugs, published_dir=Path("published")):
+    latest = {}
+    for row in rows:
+        if not is_snapshot_row(row):
+            continue
+        attachment = row.get("attachment") or {}
+        slug = snapshot_slug(attachment.get("name"))
+        url = str(attachment.get("url") or "")
+        if not slug or slug not in allowed_slugs:
+            continue
+        if not url.startswith("https://ntfy.sh/file/"):
+            continue
+        prev = latest.get(slug)
+        try:
+            row_time = int(row.get("time") or 0)
+        except (TypeError, ValueError):
+            row_time = 0
+        try:
+            prev_time = int(prev.get("time") or 0) if prev else -1
+        except (TypeError, ValueError):
+            prev_time = -1
+        if not prev or row_time >= prev_time:
+            latest[slug] = row
+    changed = False
+    for slug, row in latest.items():
+        url = row["attachment"]["url"]
+        try:
+            with urllib.request.urlopen(url, timeout=30) as res:
+                data = res.read(2_000_001)
+        except Exception as err:
+            print(f"snapshot download failed {slug}: {err}", file=sys.stderr)
+            continue
+        if len(data) > 2_000_000:
+            print(f"snapshot too large {slug}", file=sys.stderr)
+            continue
+        try:
+            payload = json.loads(data.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        dest = published_dir / f"{slug}.json"
+        if write_snapshot_payload(dest, payload):
+            print(f"updated published/{slug}.json")
+            changed = True
+    return changed
 
 
 def apply_updates(data, records):
@@ -249,16 +353,26 @@ def main():
     path = Path("events.json")
     before = load_events(path)
     try:
-        records = fetch_ntfy()
+        rows = fetch_ntfy_rows()
     except Exception as err:
         print(f"ntfy fetch failed: {err}", file=sys.stderr)
         return 0
-    after = apply_updates(before, records)
-    if json.dumps(before, sort_keys=True) == json.dumps(after, sort_keys=True):
+    after = apply_updates(before, records_from_rows(rows))
+    events_changed = json.dumps(before, sort_keys=True) != json.dumps(after, sort_keys=True)
+    if events_changed:
+        path.write_text(json.dumps(after, ensure_ascii=False, indent=2) + "\n")
+        print("updated events.json")
+    else:
         print("no event changes")
-        return 0
-    path.write_text(json.dumps(after, ensure_ascii=False, indent=2) + "\n")
-    print("updated events.json")
+    allowed = {
+        normalize_slug(event.get("slug") or event.get("name"))
+        for event in after.get("events") or []
+    }
+    allowed.discard("")
+    try:
+        sync_snapshots(rows, allowed)
+    except Exception as err:
+        print(f"snapshot sync failed: {err}", file=sys.stderr)
     return 0
 
 

@@ -79,6 +79,8 @@ def main() -> int:
     source_has("function mergeEventPair")
     source_has("function overlaySharedEventName")
     source_has("function filterDeletedEvents")
+    source_has("function publishTimetableSnapshot")
+    source_has("function fetchNtfyTimetableSnapshot")
 
     tmp = Path(tempfile.mkdtemp(prefix="tt-cross-device-"))
     shutil.copy(ROOT / "index.html", tmp / "index.html")

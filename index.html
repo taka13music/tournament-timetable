@@ -2724,6 +2724,11 @@
         const restored = await tryRestoreTimetableCache(route.eventId);
         if (restored) {
           notifyCachedTimetable(restored.savedAt);
+          publishTimetableSnapshot()
+            .then((result) => {
+              if (result === "uploaded") showToast("他の端末向けに保存しました");
+            })
+            .catch(() => {});
           return;
         }
 
@@ -3090,15 +3095,15 @@
       const settings = loadGithubSettings();
       const previous = String($("status")?.textContent || "").trim();
       const shared = await publishSharedEventRecord(event);
+      const snapshotSaved = await publishTimetableSnapshot();
       if (!settings.token) {
-        setStatus(
-          previous
-            ? `${previous} / ${shared ? "他の端末向けに配信しました" : "他の端末への配信に失敗しました"}`
-            : shared
-              ? "他の端末向けに配信しました"
-              : "他の端末への配信に失敗しました",
-          !shared
-        );
+        const saved = snapshotSaved === "uploaded" || snapshotSaved === "skipped";
+        const note = saved
+          ? "他の端末向けにタイムテーブルを保存しました"
+          : shared
+            ? "他の端末向けに配信しました"
+            : "他の端末への配信に失敗しました";
+        setStatus(previous ? `${previous} / ${note}` : note, !saved && !shared);
         return;
       }
       try {
@@ -3658,6 +3663,59 @@
         return res.ok;
       } catch (err) {
         console.warn("shared event publish", err);
+        return false;
+      }
+    }
+
+    async function publishTimetableSnapshot() {
+      if (IS_VIEWER_MODE) return false;
+      if (!Object.keys(tournamentsByDay).length) return false;
+      const event = getSelectedEvent();
+      const slug = normalizeEventSlug(event?.slug || event?.name);
+      if (!slug || !event || isPlaceholderDraftEvent(event)) return false;
+      const viewState = captureViewState();
+      const config = {
+        version: 5,
+        mode: "snapshot-live",
+        publishedAt: new Date().toISOString(),
+        eventId: slug,
+        eventName: event.name || slug,
+        sheetUrl: event.sheetUrl || $("sheetUrl")?.value?.trim() || "",
+        sheetStart: event.sheetStart || $("sheetStart")?.value?.trim() || "",
+        sheetEnd: event.sheetEnd || $("sheetEnd")?.value?.trim() || "",
+        hourHeight: Number($("hourHeight")?.value) || 60,
+        selectedDay: viewState.selectedDay,
+        dayTabItems,
+        tournamentsByDay,
+        overlapHighlight: { ...viewState.overlapHighlight },
+        overlapBandKey: viewState.overlapBandKey
+      };
+      const hash = hashString(buildPublishedJsonText({ ...config, publishedAt: "" }));
+      const storageKey = `ttSnapshotUpload:${slug}`;
+      let previous = "";
+      try {
+        previous = localStorage.getItem(storageKey) || "";
+      } catch (_) {}
+      const [prevHash, prevAt] = previous.split(":");
+      if (prevHash === hash && Date.now() - Number(prevAt || 0) < 60 * 60 * 1000) return "skipped";
+      try {
+        const res = await fetch(SHARED_EVENTS_NTFY_URL, {
+          method: "PUT",
+          headers: {
+            Filename: `${slug}.json`,
+            Title: "snapshot",
+            Tags: "snapshot",
+            "Content-Type": "application/json"
+          },
+          body: buildPublishedJsonText(config)
+        });
+        if (!res.ok) return false;
+        try {
+          localStorage.setItem(storageKey, `${hash}:${Date.now()}`);
+        } catch (_) {}
+        return "uploaded";
+      } catch (err) {
+        console.warn("timetable snapshot publish", err);
         return false;
       }
     }
@@ -4856,11 +4914,67 @@
       return null;
     }
 
+    let viewerSnapshotReadNtfy = false;
+
+    async function fetchNtfyTimetableSnapshot(slug) {
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized) return null;
+      const wanted = `${normalized}.json`;
+      try {
+        const res = await fetch(`${SHARED_EVENTS_NTFY_URL}/json?poll=1&since=6h`, {
+          cache: "no-store"
+        });
+        if (!res.ok) return null;
+        const text = String((await res.text()) || "").trim();
+        if (!text) return null;
+        const rows = text.startsWith("[")
+          ? JSON.parse(text)
+          : text.split("\n").filter(Boolean).map((line) => JSON.parse(line));
+        let best = null;
+        for (const row of rows) {
+          if (row?.event && row.event !== "message") continue;
+          const tags = Array.isArray(row?.tags) ? row.tags : [];
+          if (row?.title !== "snapshot" && !tags.includes("snapshot")) continue;
+          const attachment = row?.attachment;
+          if (!attachment?.url || attachment.name !== wanted) continue;
+          if (!best || Number(row.time || 0) >= Number(best.time || 0)) best = row;
+        }
+        if (!best?.attachment?.url) return null;
+        const fileRes = await fetch(best.attachment.url, { cache: "no-store" });
+        if (!fileRes.ok) return null;
+        const contentType = fileRes.headers.get("content-type") || "";
+        if (contentType.includes("text/html")) return null;
+        const decoded = decodePublishedJson(await fileRes.json());
+        if (!hasPublishSnapshot(decoded)) return null;
+        const payloadSlug = normalizeEventSlug(decoded.eventId || decoded.eventSlug || "");
+        if (payloadSlug && payloadSlug !== normalized) return null;
+        return decoded;
+      } catch (err) {
+        console.warn("timetable snapshot", err);
+        return null;
+      }
+    }
+
+    async function refreshNewerTimetableFromNtfy(slug) {
+      try {
+        const decoded = await fetchNtfyTimetableSnapshot(slug);
+        if (!decoded || viewerIncomingSnapshotIsStale(decoded)) return;
+        await applyViewerPublishedPayload(decoded);
+      } catch (err) {
+        console.warn("newer timetable snapshot", err);
+      }
+    }
+
     async function fetchSavedViewerSnapshot(slug) {
+      viewerSnapshotReadNtfy = false;
       const path = slug ? getLegacyPublishedPath(slug) : PUBLISHED_JSON_PATH;
       const raw = await fetchFirstJson(absoluteJsonUrls(path));
       const decoded = decodePublishedJson(raw);
-      return hasPublishSnapshot(decoded) ? decoded : null;
+      if (hasPublishSnapshot(decoded)) return decoded;
+      const normalized = normalizeEventSlug(slug);
+      if (!normalized) return null;
+      viewerSnapshotReadNtfy = true;
+      return fetchNtfyTimetableSnapshot(normalized);
     }
 
     async function fetchViewerEventList() {
@@ -5226,6 +5340,10 @@
           return;
         }
         await applyViewerPublishedPayload(decoded);
+        if (!viewerSnapshotReadNtfy) {
+          const slug = getViewerEventSlug();
+          if (slug) refreshNewerTimetableFromNtfy(slug);
+        }
       } catch (e) {
         if (dayTabItems.length) return;
         setStatus(formatFetchError(e), true);
