@@ -4943,7 +4943,7 @@
         overlapBandKey: config.overlapBandKey || null
       };
 
-      const loadOptions = { preserveState: true, savedState, sheetConfig };
+      const loadOptions = { preserveState: true, savedState, sheetConfig, light: true };
       if (!sheetConfig.sheetStart || !sheetConfig.sheetEnd) {
         const ok = await loadSingleFromUrl(loadOptions);
         if (!ok) {
@@ -9837,18 +9837,15 @@
       html,
       csvMeta,
       cached,
-      parsedGrid = null
+      parsedGrid = null,
+      options = {}
     ) {
       const grid = parsedGrid || parseGvizResponse(gvizText);
       const htmlMeta = html ? parseHtmlviewMetadata(html) : {};
       const sheetMeta = buildSheetSupplementalMeta(csvMeta, htmlMeta);
-      const festivalMeta = await resolveFestivalMeta(
-        url,
-        item.sheetName,
-        item.gid,
-        grid,
-        sheetMeta
-      );
+      const festivalMeta = options.light
+        ? extractFestivalMetaFromGrid(grid)
+        : await resolveFestivalMeta(url, item.sheetName, item.gid, grid, sheetMeta);
       const markers = html
         ? parseHtmlviewMarkers(html)
         : { blueStartRaw: "", redEndRaw: "", yellowLevel: null };
@@ -9917,13 +9914,14 @@
       }
 
       const grid = parseGvizResponse(gvizText);
-      const html = gridHasFestivalMeta(grid)
+      const light = !!options.light;
+      const html = light || gridHasFestivalMeta(grid)
         ? ""
         : await fetchHtmlviewText(spreadsheetId, item.gid, item.sheetName);
       const markersHash = hashString(html || "");
       const htmlMeta = html ? parseHtmlviewMetadata(html) : {};
       let csvMeta = {};
-      if (needsCsvMetadata(grid, htmlMeta)) {
+      if (!light && needsCsvMetadata(grid, htmlMeta)) {
         csvMeta = await fetchSheetMetadataCsv(spreadsheetId, item.gid, item.sheetName);
       }
       const csvHash = hashString(JSON.stringify(csvMeta || {}));
@@ -9950,7 +9948,8 @@
         html,
         csvMeta,
         cached,
-        grid
+        grid,
+        { light }
       );
       if (count === 0) {
         delete sheetSnapshotCache[cacheKey];
@@ -10018,7 +10017,7 @@
     }
 
     async function loadAll(options = {}) {
-      const { preserveState = false, savedState = null, incremental = false, sheetConfig = null } = options;
+      const { preserveState = false, savedState = null, incremental = false, sheetConfig = null, light = false } = options;
       const { sheetUrl: url, sheetStart: start, sheetEnd: end } = resolveSheetConfig(sheetConfig);
       if (!url) {
         setStatus("URL \u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", true);
@@ -10090,7 +10089,7 @@
 
         const totalSheets = sheetSchedule.length;
         const targetCount = sheetsToLoad.length;
-        const loadOptions = { incremental: isIncremental };
+        const loadOptions = { incremental: isIncremental, light };
 
         if (isIncremental && targetCount === 0) {
           const missingSheets = getMissingScheduledSheetNames();
@@ -10122,7 +10121,11 @@
         let processedCount = 0;
         let changedCount = 0;
         const failedSheets = [];
-        const maxConcurrency = isIncremental ? SHEET_INCREMENTAL_CONCURRENCY : SHEET_LOAD_CONCURRENCY;
+        const maxConcurrency = isIncremental
+          ? SHEET_INCREMENTAL_CONCURRENCY
+          : loadOptions.light
+            ? 24
+            : SHEET_LOAD_CONCURRENCY;
         const sheetConcurrency = Math.min(maxConcurrency, Math.max(targetCount, 1));
 
         function refreshBoardDuringLoad({ refreshTabs = false, renderBoardNow = false } = {}) {
@@ -10151,14 +10154,16 @@
             processedCount++;
             if (result.changed) changedCount++;
             if (result.changed) {
+              const tabEvery = loadOptions.light ? 1 : TAB_REFRESH_EVERY_N_SHEETS;
+              const renderEvery = loadOptions.light ? 1 : RENDER_EVERY_N_SHEETS;
               const refreshTabs =
                 changedCount === 1 ||
                 processedCount === targetCount ||
-                changedCount % TAB_REFRESH_EVERY_N_SHEETS === 0;
+                changedCount % tabEvery === 0;
               const renderBoardNow =
                 changedCount === 1 ||
                 processedCount === targetCount ||
-                changedCount % RENDER_EVERY_N_SHEETS === 0;
+                changedCount % renderEvery === 0;
               refreshBoardDuringLoad({ refreshTabs, renderBoardNow });
             }
             setStatus(
