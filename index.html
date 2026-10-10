@@ -4774,7 +4774,6 @@
       });
       const checkLatest = () => {
         reloadViewerFromAdminCache({ announce: false }).catch(() => {});
-        refreshViewerEventName().catch(() => {});
       };
       window.addEventListener("focus", checkLatest);
       document.addEventListener("visibilitychange", () => {
@@ -4797,7 +4796,6 @@
       renderViewerFromDecoded(decoded);
       updateViewerBanner(decoded, true);
       setStatus("");
-      refreshViewerEventName().catch(() => {});
       return true;
     }
 
@@ -4805,53 +4803,58 @@
       hideViewerEventPicker();
       const boardWrap = document.querySelector(".board-wrap");
       if (boardWrap) boardWrap.style.display = "";
-      await overlaySharedEventName(decoded, getViewerEventSlug() || decoded?.eventId || "");
-      viewerPublishConfig = decoded;
-      const sameSnapshot =
-        decoded?.publishedAt && decoded.publishedAt === viewerAppliedSavedAt && dayTabItems.length;
-      if (!sameSnapshot) {
-        applyPublishPayload(decoded);
-        if (!dayTabItems.length) {
-          throw new Error("公開データが空です。");
-        }
-        viewerAppliedSavedAt = decoded.publishedAt || "";
-        renderViewerFromDecoded(decoded);
-        updateViewerBanner(decoded, true);
+      if (!hasPublishSnapshot(decoded) || viewerIncomingSnapshotIsStale(decoded)) {
+        if (announce) setStatus(announce);
+        return;
       }
-      await persistViewerSnapshot(decoded);
+      viewerPublishConfig = decoded;
+      applyPublishPayload(decoded);
+      if (!dayTabItems.length) {
+        throw new Error("公開データが空です。");
+      }
+      viewerAppliedSavedAt = decoded.publishedAt || "";
+      renderViewerFromDecoded(decoded);
+      updateViewerBanner(decoded, true);
       setStatus(announce || "");
+      await persistViewerSnapshot(decoded);
+    }
+
+    function viewerIncomingSnapshotIsStale(decoded) {
+      if (!dayTabItems.length) return false;
+      const incomingAt = decoded?.publishedAt || "";
+      if (incomingAt && incomingAt === viewerAppliedSavedAt) return true;
+      const incomingTs = Date.parse(incomingAt) || 0;
+      const currentTs = Date.parse(viewerAppliedSavedAt || "") || 0;
+      if (!incomingTs) return currentTs > 0;
+      if (!currentTs) return false;
+      return incomingTs <= currentTs;
+    }
+
+    async function fetchSavedViewerSnapshot(slug) {
+      const path = slug ? getLegacyPublishedPath(slug) : PUBLISHED_JSON_PATH;
+      try {
+        const res = await fetch(path);
+        if (!res.ok) return null;
+        const decoded = decodePublishedJson(await res.json());
+        return hasPublishSnapshot(decoded) ? decoded : null;
+      } catch (_) {
+        return null;
+      }
     }
 
     async function refreshViewerFromSheet() {
       const fromAdmin = await reloadViewerFromAdminCache({ announce: true });
       if (fromAdmin) return;
-      setStatus("更新中...");
-      const slug = getViewerEventSlug();
-      try {
-        const decoded = await loadPublishedJsonPayload(slug || "", { bypassCache: true });
-        if (hasPublishSnapshot(decoded)) {
-          await applyViewerPublishedPayload(decoded, {
-            announce: "最新の公開データに更新しました"
-          });
-          return;
-        }
-        const liveConfig = hasPublishSheetConfig(decoded) ? decoded : viewerPublishConfig;
-        if (!liveConfig?.sheetUrl) {
-          setStatus("更新できる公開データがありません", true);
-          return;
-        }
-        await loadViewerFromLiveConfig(liveConfig);
-        renderViewerFromDecoded(liveConfig);
-        setStatus("シートの最新データに更新しました");
-      } catch (err) {
-        if (viewerPublishConfig?.sheetUrl) {
-          await loadViewerFromLiveConfig(viewerPublishConfig);
-          renderViewerFromDecoded(viewerPublishConfig);
-          setStatus("シートの最新データに更新しました");
-          return;
-        }
-        throw err;
+      if (dayTabItems.length) {
+        setStatus("");
+        return;
       }
+      const decoded = await fetchSavedViewerSnapshot(getViewerEventSlug());
+      if (decoded && hasPublishSnapshot(decoded)) {
+        await applyViewerPublishedPayload(decoded);
+        return;
+      }
+      setStatus("表示できるタイムテーブルがありません。管理画面で読み込んでください。", true);
     }
 
     function resolveSheetConfig(override) {
@@ -4876,40 +4879,6 @@
       if (sheetUrlEl) sheetUrlEl.value = sheetConfig.sheetUrl;
       if (sheetStartEl) sheetStartEl.value = sheetConfig.sheetStart;
       if (sheetEndEl) sheetEndEl.value = sheetConfig.sheetEnd;
-    }
-
-    async function loadViewerFromLiveConfig(config) {
-      if (!config?.sheetUrl?.trim()) {
-        throw new Error("\u516c\u958b\u8a2d\u5b9a\u306b\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8URL\u304c\u3042\u308a\u307e\u305b\u3093\u3002");
-      }
-
-      const sheetConfig = resolveSheetConfig({
-        sheetUrl: config.sheetUrl,
-        sheetStart: config.sheetStart,
-        sheetEnd: config.sheetEnd
-      });
-      applySheetConfigToDom(sheetConfig);
-      $("hourHeight").value = String(config.hourHeight || 60);
-
-      const savedState = {
-        selectedDay: config.selectedDay || "",
-        overlapHighlight: config.overlapHighlight || { mode: "none", bandId: null },
-        overlapBandKey: config.overlapBandKey || null
-      };
-
-      const loadOptions = { preserveState: true, savedState, sheetConfig };
-      if (!sheetConfig.sheetStart || !sheetConfig.sheetEnd) {
-        const ok = await loadSingleFromUrl(loadOptions);
-        if (!ok) {
-          throw new Error("\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u304b\u3089\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002");
-        }
-        return;
-      }
-
-      await loadAll(loadOptions);
-      if (!Object.keys(tournamentsByDay).length) {
-        throw new Error("\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u304b\u3089\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002");
-      }
     }
 
     function buildPublishedJsonText(config) {
@@ -5070,26 +5039,11 @@
       });
     }
 
-    async function resolveViewerConfigForSlug(slug, params) {
-      const fromPublished = await loadPublishedJsonPayload(slug || "", { bypassCache: true }).catch(
-        (err) => err
-      );
-      if (fromPublished && !(fromPublished instanceof Error) && hasPublishSnapshot(fromPublished)) {
-        return overlaySharedEventName(fromPublished, slug);
-      }
-      if (
-        fromPublished &&
-        !(fromPublished instanceof Error) &&
-        hasPublishSheetConfig(fromPublished)
-      ) {
-        return overlaySharedEventName(fromPublished, slug);
-      }
-      const fromEvents = await loadViewerConfigFromEventsJson(slug || "");
-      if (fromEvents) return fromEvents;
-      const fromQuery = viewerConfigFromSearchParams(params);
-      if (fromQuery) return fromQuery;
+    async function resolveViewerConfigForSlug(slug) {
+      const fromPublished = await loadPublishedJsonPayload(slug || "").catch((err) => err);
       if (fromPublished instanceof Error) throw fromPublished;
-      return fromPublished || null;
+      if (hasPublishSnapshot(fromPublished)) return fromPublished;
+      return null;
     }
 
     async function loadViewerConfigFromEventsJson(slug) {
@@ -5141,13 +5095,12 @@
 
       try {
         let decoded = null;
-        let paintedFromCache = false;
         if (isEmbeddedPublishPayload(pValue)) {
           decoded = await decodePublishPayload(pValue);
         } else if (cValue) {
           decoded = await decodePublishPayload(cValue);
-        } else if (!pValue) {
-          const registry = await fetchEventsJson();
+        } else if (!normalizeEventSlug(pValue)) {
+          const registry = loadEventRegistryFromStorage();
           const events = (registry?.events || []).filter((event) => event.slug);
           if (events.length === 1) {
             location.replace(`/e/${encodeURIComponent(events[0].slug)}`);
@@ -5157,62 +5110,30 @@
             showViewerEventPicker(events);
             return;
           }
-          setStatus("読み込み中...");
-          decoded = await loadPublishedJsonPayload("", { bypassCache: true });
+          decoded = await fetchSavedViewerSnapshot("");
         } else {
           const requestedSlug = normalizeEventSlug(pValue);
-          const mapped = requestedSlug ? await lookupSharedEventBySlug(requestedSlug) : null;
-          const currentSlug = normalizeEventSlug(mapped?.slug);
-          if (currentSlug && currentSlug !== requestedSlug) {
-            location.replace(`/e/${encodeURIComponent(currentSlug)}`);
-            return;
-          }
-          paintedFromCache = await tryPaintViewerFromCache(pValue || "");
-          if (!paintedFromCache) setStatus("読み込み中...");
-          try {
-            decoded = await resolveViewerConfigForSlug(pValue || "", params);
-          } catch (err) {
-            if (paintedFromCache) {
-              setStatus("最新データの取得に失敗したため、前回の表示を維持しています", true);
-              return;
-            }
-            throw err;
-          }
+          if (await tryPaintViewerFromCache(requestedSlug)) return;
+          decoded = await fetchSavedViewerSnapshot(requestedSlug);
         }
 
-        hideViewerEventPicker();
-        const boardWrap = document.querySelector(".board-wrap");
-        if (boardWrap) boardWrap.style.display = "";
-
-        if (!hasPublishSnapshot(decoded) && !hasPublishSheetConfig(decoded)) {
-          if (paintedFromCache) return;
-          throw new Error("閲覧用URLの設定が不正です。管理画面で「公開」し直してください。");
-        }
-
-        viewerPublishConfig = decoded;
-
-        if (hasPublishSnapshot(decoded)) {
-          await applyViewerPublishedPayload(decoded);
-        } else {
-          setStatus("読み込み中...");
-          await loadViewerFromLiveConfig(decoded);
-          if (!dayTabItems.length) {
-            throw new Error("公開データが空です。");
-          }
-          renderViewerFromDecoded(decoded);
-          updateViewerBanner(decoded, false);
-          setStatus("\u30b7\u30fc\u30c8\u306e\u6700\u65b0\u30c7\u30fc\u30bf\u3092\u8868\u793a\u4e2d");
-        }
-      } catch (e) {
-        if (dayTabItems.length) {
-          setStatus(formatFetchError(e), true);
+        if (!hasPublishSnapshot(decoded)) {
+          const board = $("board");
+          board.className = "empty";
+          board.innerHTML =
+            "表示できるタイムテーブルがありません。<br>管理画面で読み込んでから開いてください。";
+          setStatus("");
+          setExportSvgEnabled(false);
           return;
         }
+        await applyViewerPublishedPayload(decoded);
+      } catch (e) {
+        if (dayTabItems.length) return;
         setStatus(formatFetchError(e), true);
         const board = $("board");
         board.className = "empty";
         board.innerHTML =
-          "公開データを読み込めませんでした。<br>管理画面の「閲覧URL」をコピーして開き直してください。";
+          "表示できるタイムテーブルがありません。<br>管理画面で読み込んでから開いてください。";
         setExportSvgEnabled(false);
       }
     }
