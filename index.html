@@ -4832,9 +4832,12 @@
 
     async function fetchSavedViewerSnapshot(slug) {
       const path = slug ? getLegacyPublishedPath(slug) : PUBLISHED_JSON_PATH;
+      const url = new URL(path, `${location.origin}/`).href;
       try {
-        const res = await fetch(path);
+        const res = await fetch(url);
         if (!res.ok) return null;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("text/html")) return null;
         const decoded = decodePublishedJson(await res.json());
         return hasPublishSnapshot(decoded) ? decoded : null;
       } catch (_) {
